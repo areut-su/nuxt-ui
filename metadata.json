@@ -1,0 +1,6 @@
+{
+  "name": "Vue & Nuxt Admin UI Showcase",
+  "description": "Интерактивная витрина пяти MIT-шаблонов административных панелей Vue и Nuxt с отдельными полноэкранными страницами и переключением цветовых тем.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

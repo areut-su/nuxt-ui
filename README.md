@@ -1,12 +1,66 @@
-# Vue & Nuxt Admin Dashboard Showcase
+# Vue & Nuxt Admin Dashboard Showcase (`areut-su/nuxt-ui`)
 
+[![Version](https://img.shields.io/badge/version-v1.0.0-0f172a.svg?style=flat-square)](./CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-16a34a.svg?style=flat-square)](./LICENSE)
-[![Templates](https://img.shields.io/badge/Templates-5%20Styles-0f172a.svg?style=flat-square)](#сравнительная-матрица-дизайн-систем)
-[![Color Schemes](https://img.shields.io/badge/Color%20Schemes-14%20Global%20Themes-2563eb.svg?style=flat-square)](#возможности-витрины)
-[![Nuxt Compatible](https://img.shields.io/badge/Target-Nuxt%203%20%2F%204%20%26%20Vue%203-00dc82.svg?style=flat-square)](#сравнительная-матрица-дизайн-систем)
+[![CI](https://img.shields.io/github/actions/workflow/status/areut-su/nuxt-ui/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/areut-su/nuxt-ui/actions)
+[![Last Commit](https://img.shields.io/github/last-commit/areut-su/nuxt-ui?style=flat-square)](https://github.com/areut-su/nuxt-ui/commits/main)
+[![Repo Size](https://img.shields.io/github/repo-size/areut-su/nuxt-ui?style=flat-square)](https://github.com/areut-su/nuxt-ui)
+[![Issues](https://img.shields.io/github/issues/areut-su/nuxt-ui?style=flat-square)](https://github.com/areut-su/nuxt-ui/issues)
+[![Stars](https://img.shields.io/github/stars/areut-su/nuxt-ui?style=flat-square)](https://github.com/areut-su/nuxt-ui/stargazers)
+[![Templates](https://img.shields.io/badge/Templates-5%20Styles-2563eb.svg?style=flat-square)](#галерея-скриншотов-5-стилей)
+[![Color Schemes](https://img.shields.io/badge/Themes-14%20Global%20Schemes-00dc82.svg?style=flat-square)](#возможности-витрины)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178c6.svg?style=flat-square)](./tsconfig.json)
 
-Интерактивная витрина пяти открытых MIT-дизайн-систем административных панелей экосистемы **Vue / Nuxt** с отдельными полноэкранными страницами, единым переключателем из **14 цветовых схем**, многоуровневым боковым меню с подпунктами и таблицами **Data Grid** (поиск в селектах, чекбоксы, CRUD, сортировка и пагинация).
+Интерактивная витрина пяти открытых **MIT**-дизайн-систем административных панелей экосистемы **Vue / Nuxt** с отдельными полноэкранными страницами, единым переключателем из **14 цветовых схем**, многоуровневым боковым меню с подпунктами, сменой языка (**RU / EN**) и таблицами **Data Grid** с подтверждением удаления, CRUD-формами, поиском в селектах и пагинацией.
+
+---
+
+## Оглавление
+
+- [Галерея скриншотов (5 стилей)](#галерея-скриншотов-5-стилей)
+- [Сравнительная матрица дизайн-систем](#сравнительная-матрица-дизайн-систем)
+- [Возможности витрины](#возможности-витрины)
+- [Структура проекта](#структура-проекта)
+- [Локальный запуск и скрипты](#локальный-запуск-и-скрипты)
+- [История изменений и участие](#история-изменений-и-участие)
+- [Лицензия MIT](#лицензия-mit)
+
+---
+
+## Галерея скриншотов (5 стилей)
+
+### 01. Nuxt Shadcn Admin Dashboard (`#/nuxt-shadcn`)
+Оригинал: [`arhamkhnz/nuxt-shadcn-admin-dashboard`](https://github.com/arhamkhnz/nuxt-shadcn-admin-dashboard) · **MIT License** · Врезной холст `SidebarInset`, переключатель ширины `Fluid / Centered`, задачи и графики.
+
+![Nuxt Shadcn Admin Dashboard](./docs/screenshots/01-nuxt-shadcn-admin.jpg)
+
+---
+
+### 02. Shadcn Dashboard Nuxt (`#/miguel-shadcn`)
+Оригинал: [`Miguel-Domingos/shadcn-dashboard`](https://github.com/Miguel-Domingos/shadcn-dashboard) · **MIT License** · Минималистичный Nuxt 3 + Radix-интерфейс с переключателем воркспейсов и `Cmd+K`.
+
+![Shadcn Dashboard Nuxt](./docs/screenshots/02-miguel-shadcn-dashboard.jpg)
+
+---
+
+### 03. Shadcn-Vue Official Blocks (`#/shadcn-blocks`)
+Оригинал: [`shadcn-vue.com/blocks`](https://www.shadcn-vue.com/blocks) (`dashboard-01`) · **MIT License** · Эталонный блок с `Quick Create`, `SectionCards`, `ChartAreaInteractive` и таблицей с табами.
+
+![Shadcn-Vue Official Blocks](./docs/screenshots/03-shadcn-vue-blocks.jpg)
+
+---
+
+### 04. AdminLTE 4 Vue / Nuxt (`#/adminlte-vue`)
+Оригинал: [`ColorlibHQ/adminlte-vue`](https://github.com/ColorlibHQ/adminlte-vue) · **MIT License** · Корпоративный Bootstrap 5.3 интерфейс с `SmallBox`, `Treeview`, `Browser Usage` и `Control Sidebar`.
+
+![AdminLTE 4 Vue Dashboard](./docs/screenshots/04-adminlte-vue.jpg)
+
+---
+
+### 05. Nuxt UI v3 Dashboard (`#/nuxt-ui`)
+Оригинал: [`nuxt-ui-templates/dashboard`](https://github.com/nuxt-ui-templates/dashboard) · **MIT License** · Официальный шаблон `@nuxt/ui` v3+ с `UDashboardGroup`, встроенным двухколоночным `Inbox` и `Customers Grid`.
+
+![Nuxt UI v3 Dashboard](./docs/screenshots/05-nuxt-ui-dashboard.jpg)
 
 ---
 
@@ -26,33 +80,72 @@
 
 ## Возможности витрины
 
-- **5 отдельных полноэкранных страниц** (`#/nuxt-shadcn`, `#/miguel-shadcn`, `#/shadcn-blocks`, `#/adminlte-vue`, `#/nuxt-ui`) с быстрым переключением в верхней панели и по `⌘K` / `Ctrl+K`.
-- **14 общих цветовых схем** (8 светлых и 6 тёмных) с синхронным применением ко всем пяти стилям, светлыми сайдбарами и светлой шапкой в светлых темах.
-- **Боковое меню с раскрывающимися подпунктами** во всех пяти шаблонах.
+- **5 отдельных полноэкранных страниц** с быстрым переключением в верхней панели и по `⌘K` / `Ctrl+K`.
+- **14 общих цветовых схем** (8 светлых и 6 тёмных) с синхронным применением ко всем стилям, светлыми сайдбарами и светлым верхним меню на светлых темах.
+- **Смена языка (`RU / EN`)** в верхней панели и прямо внутри каждой формы создания/редактирования и диалога подтверждения удаления.
+- **Многоуровневое боковое меню с подпунктами** во всех пяти шаблонах.
 - **Полноценный Accounts & Subscriptions Grid** в каждом стиле:
   - Режимы **Table** и **Card Grid**;
   - Мультиселекты с **поиском внутри списка** и **чекбоксами** (`Plan`, `Region`, `Country`);
   - Чекбоксы статусов (`Active`, `Pending`, `Past Due`) и фильтра `MRR ≥ $1,000`;
-  - Создание (`New Account`), редактирование, удаление с отменой (`Undo`) и массовое удаление;
+  - Создание (`New Account`), редактирование, **модальное подтверждение удаления** (одиночного и массового) + `Undo`;
   - Сортировка по колонкам и пагинация (`5 / 8 / 12` строк на странице).
 
 ---
 
-## Локальный запуск
+## Структура проекта
 
-```bash
-npm install
-npm run dev
-```
-
-Сборка production-бандла:
-
-```bash
-npm run build
+```text
+.
+├── .github/workflows/ci.yml        # GitHub Actions CI (lint + build)
+├── docs/screenshots/               # Скриншоты всех 5 стилей для README
+├── src/
+│   ├── components/
+│   │   ├── dashboards/             # 5 отдельных страниц дизайн-систем
+│   │   ├── shared/                 # ThemedDataGrid, SidebarTreeNav, SVG-графики, Cmd+K
+│   │   ├── GalleryHome.tsx         # Главная витрина + сравнительная матрица
+│   │   └── ShowcaseTopBar.tsx      # Общая верхняя панель (стили, 14 схем, RU/EN)
+│   ├── context/LocaleContext.tsx   # Глобальное переключение языка RU / EN
+│   ├── data/                       # Реестр 5 стилей, 14 схем и датасеты
+│   └── types/showcase.ts           # Типы TypeScript
+├── CHANGELOG.md                    # История версий (SemVer)
+├── CONTRIBUTING.md                 # Правила участия в проекте
+├── LICENSE                         # Лицензия MIT
+└── package.json                    # Метаданные пакета (v1.0.0)
 ```
 
 ---
 
-## Лицензия
+## Локальный запуск и скрипты
 
-Проект и все представленные в витрине дизайн-системы распространяются под свободной лицензией **[MIT](./LICENSE)** — разрешено коммерческое использование, модификация и распространение.
+Требуется **Node.js 20+**.
+
+```bash
+# Установка зависимостей
+npm install
+
+# Запуск локального сервера разработки (порт 3000)
+npm run dev
+
+# Проверка типов TypeScript
+npm run lint
+
+# Сборка production-бандла
+npm run build
+
+# Локальный просмотр собранного бандла
+npm run preview
+```
+
+---
+
+## История изменений и участие
+
+- Актуальная версия: **[`v1.0.0`](./CHANGELOG.md)** — см. подробности в [`CHANGELOG.md`](./CHANGELOG.md).
+- Хотите добавить новую схему или улучшить макет? См. [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+---
+
+## Лицензия MIT
+
+Проект и все представленные в витрине дизайн-системы распространяются под свободной лицензией **[MIT](./LICENSE)** — разрешено коммерческое использование, модификация и распространение без ограничений.

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   ArrowUpDown,
   Check,
   ChevronDown,
@@ -10,6 +11,7 @@ import {
   Download,
   LayoutGrid,
   List,
+  PanelRight,
   Pencil,
   Plus,
   RotateCcw,
@@ -18,9 +20,18 @@ import {
   X,
 } from 'lucide-react';
 import { EXTENDED_GRID_RECORDS, type GridRecord } from '../../data/mockDashboardData';
+import { useFormLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from './AvatarWithFallback';
+import { FormLanguageToggle } from './FormLanguageToggle';
+import { ThemedOffcanvas } from './ThemedOffcanvas';
 
 type SortField = 'id' | 'customer' | 'seats' | 'mrr' | 'updatedAt';
+
+type DeleteTarget =
+  | { type: 'single'; record: GridRecord }
+  | { type: 'bulk'; count: number }
+  | null;
 
 interface ThemedDataGridProps {
   title: string;
@@ -31,6 +42,10 @@ interface ThemedDataGridProps {
 
 interface SearchableCheckboxSelectProps {
   label: string;
+  allLabel: string;
+  selectVisibleLabel: string;
+  clearLabel: string;
+  noOptionsLabel: string;
   options: { value: string; sub?: string }[];
   selected: string[];
   onChange: (next: string[]) => void;
@@ -39,6 +54,10 @@ interface SearchableCheckboxSelectProps {
 
 function SearchableCheckboxSelect({
   label,
+  allLabel,
+  selectVisibleLabel,
+  clearLabel,
+  noOptionsLabel,
   options,
   selected,
   onChange,
@@ -99,7 +118,7 @@ function SearchableCheckboxSelect({
       >
         <span>
           {label}
-          {selected.length > 0 ? ` (${selected.length})` : ': All'}
+          {selected.length > 0 ? ` (${selected.length})` : `: ${allLabel}`}
         </span>
         <ChevronDown className="w-3.5 h-3.5 opacity-70" />
       </button>
@@ -147,7 +166,7 @@ function SearchableCheckboxSelect({
               className="font-medium hover:underline"
               style={{ color: 'var(--d-primary)' }}
             >
-              Select visible ({visibleOptions.length})
+              {selectVisibleLabel} ({visibleOptions.length})
             </button>
             {selected.length > 0 && (
               <button
@@ -156,7 +175,7 @@ function SearchableCheckboxSelect({
                 className="hover:underline"
                 style={{ color: 'var(--d-muted)' }}
               >
-                Clear
+                {clearLabel}
               </button>
             )}
           </div>
@@ -165,7 +184,7 @@ function SearchableCheckboxSelect({
           <div className="max-h-52 overflow-y-auto p-1.5 space-y-0.5">
             {visibleOptions.length === 0 ? (
               <div className="py-4 text-center text-xs" style={{ color: 'var(--d-muted)' }}>
-                No matching options
+                {noOptionsLabel}
               </div>
             ) : (
               visibleOptions.map((opt) => {
@@ -203,12 +222,101 @@ function SearchableCheckboxSelect({
   );
 }
 
+const STATUS_LABELS_RU: Record<GridRecord['status'], string> = {
+  Active: 'Активен',
+  Pending: 'Ожидает',
+  'Past Due': 'Просрочен',
+};
+
 export function ThemedDataGrid({
   title,
   subtitle,
   defaultViewMode = 'table',
   defaultStatusFilter = 'All',
 }: ThemedDataGridProps) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
+
+  const t = useMemo(
+    () => ({
+      table: isRu ? 'Таблица' : 'Table',
+      grid: isRu ? 'Карточки' : 'Grid',
+      export: isRu ? 'Экспорт' : 'Export',
+      newAccount: isRu ? 'Новый аккаунт' : 'New Account',
+      searchPlaceholder: isRu
+        ? 'Поиск по аккаунту, компании, стране или ID...'
+        : 'Search account, company, country, or ID...',
+      all: isRu ? 'Все' : 'All',
+      selectVisible: isRu ? 'Выбрать видимые' : 'Select visible',
+      clear: isRu ? 'Сбросить' : 'Clear',
+      noOptions: isRu ? 'Ничего не найдено' : 'No matching options',
+      plan: isRu ? 'Тариф' : 'Plan',
+      searchPlans: isRu ? 'Поиск тарифа...' : 'Search plans...',
+      region: isRu ? 'Регион' : 'Region',
+      searchRegions: isRu ? 'Поиск региона...' : 'Search regions...',
+      country: isRu ? 'Страна' : 'Country',
+      searchCountry: isRu ? 'Поиск страны...' : 'Search country...',
+      reset: isRu ? 'Сброс' : 'Reset',
+      status: isRu ? 'Статус' : 'Status',
+      selected: isRu ? 'выбрано' : 'selected',
+      deleteSelected: isRu ? 'Удалить выбранные' : 'Delete selected',
+      emptyTitle: isRu ? 'Нет аккаунтов по выбранным фильтрам' : 'No accounts match the selected filters',
+      emptyDesc: isRu
+        ? 'Измените поисковый запрос, чекбоксы статусов или фильтр по стране.'
+        : 'Try adjusting your search query, plan checkboxes, or country filter.',
+      resetAllFilters: isRu ? 'Сбросить все фильтры' : 'Reset All Filters',
+      colAccount: isRu ? 'Аккаунт / Компания' : 'Account / Company',
+      colSeats: isRu ? 'Места' : 'Seats',
+      colUpdated: isRu ? 'Обновлён' : 'Updated',
+      colActions: isRu ? 'Действия' : 'Actions',
+      showing: isRu ? 'Показано' : 'Showing',
+      of: isRu ? 'из' : 'of',
+      rows: isRu ? 'Строк:' : 'Rows:',
+      undo: isRu ? 'Отменить' : 'Undo',
+      // Edit / Create Modal
+      createTitle: isRu ? 'Новый аккаунт' : 'New Account',
+      editTitle: isRu ? 'Редактирование' : 'Edit',
+      modalDesc: isRu
+        ? 'Измените тариф, статус, количество мест или ежемесячный MRR'
+        : 'Update subscription tier, status, seats, or monthly billing',
+      fieldCustomer: isRu ? 'Имя клиента' : 'Customer Name',
+      fieldCompany: isRu ? 'Компания' : 'Company',
+      fieldEmail: 'Email',
+      fieldPlan: isRu ? 'Тариф' : 'Plan',
+      fieldStatus: isRu ? 'Статус' : 'Status',
+      fieldRegion: isRu ? 'Регион' : 'Region',
+      fieldCountry: isRu ? 'Страна' : 'Country',
+      fieldSeats: isRu ? 'Места (Seats)' : 'Seats',
+      fieldMrr: isRu ? 'Ежемесячный MRR ($)' : 'Monthly MRR ($)',
+      cancel: isRu ? 'Отмена' : 'Cancel',
+      createBtn: isRu ? 'Создать аккаунт' : 'Create Account',
+      saveBtn: isRu ? 'Сохранить' : 'Save Changes',
+      // Delete Confirmation Modal
+      deleteConfirmTitle: isRu ? 'Подтверждение удаления' : 'Confirm Deletion',
+      deleteSingleDesc: (row: GridRecord) =>
+        isRu
+          ? `Вы действительно хотите удалить аккаунт ${row.id} (${row.customer} — ${row.company})? Запись будет убрана из таблицы.`
+          : `Are you sure you want to delete account ${row.id} (${row.customer} — ${row.company})? This record will be removed from the grid.`,
+      deleteBulkDesc: (count: number) =>
+        isRu
+          ? `Вы действительно хотите удалить выбранные аккаунты (${count} шт.)? Это действие удалит все отмеченные строки.`
+          : `Are you sure you want to delete ${count} selected account(s)? All checked rows will be removed.`,
+      deleteBtn: isRu ? 'Удалить' : 'Delete',
+      deleteBulkBtn: (count: number) =>
+        isRu ? `Удалить (${count})` : `Delete (${count})`,
+      // Inspector Offcanvas
+      inspectTitle: isRu ? 'Карточка аккаунта (Offcanvas)' : 'Account Details (Offcanvas)',
+      editAction: isRu ? 'Редактировать' : 'Edit',
+      deleteAction: isRu ? 'Удалить' : 'Delete',
+      inspectAction: isRu ? 'Открыть в Offcanvas' : 'Inspect in Offcanvas',
+      annualArr: isRu ? 'Годовой ARR' : 'Estimated ARR',
+      billingCycle: isRu ? 'Расчётный цикл' : 'Billing Cycle',
+      monthly: isRu ? 'Ежемесячно' : 'Monthly',
+    }),
+    [isRu]
+  );
+
   const [records, setRecords] = useState<GridRecord[]>(EXTENDED_GRID_RECORDS);
   const [search, setSearch] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<GridRecord['status'][]>(
@@ -225,11 +333,29 @@ export function ThemedDataGrid({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [notice, setNotice] = useState<{ text: string; undoRecord?: GridRecord } | null>(null);
 
   // Edit / Create Modal State
   const [editingRecord, setEditingRecord] = useState<GridRecord | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+
+  // Delete Confirmation Modal State
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+
+  // Row Inspector Offcanvas State
+  const [inspectRecord, setInspectRecord] = useState<GridRecord | null>(null);
+
+  // Escape key closes modals
+  useEffect(() => {
+    if (!editingRecord && !deleteTarget) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (deleteTarget) setDeleteTarget(null);
+        else if (editingRecord) setEditingRecord(null);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [editingRecord, deleteTarget]);
 
   const countryOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -337,31 +463,85 @@ export function ThemedDataGrid({
     setPage(1);
   };
 
-  const handleDeleteRow = (row: GridRecord) => {
-    setRecords((prev) => prev.filter((r) => r.id !== row.id));
-    setSelectedIds((prev) => prev.filter((id) => id !== row.id));
-    setNotice({ text: `Deleted ${row.id} (${row.customer})`, undoRecord: row });
+  const requestDeleteRow = (row: GridRecord) => {
+    setDeleteTarget({ type: 'single', record: row });
   };
 
-  const handleUndoDelete = () => {
-    if (!notice?.undoRecord) return;
-    const restored = notice.undoRecord;
-    setRecords((prev) => [restored, ...prev]);
-    setNotice(null);
+  const requestBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setDeleteTarget({ type: 'bulk', count: selectedIds.length });
   };
 
-  const handleBulkDelete = () => {
-    const count = selectedIds.length;
-    setRecords((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
-    setSelectedIds([]);
-    setNotice({ text: `Deleted ${count} selected account(s).` });
-    setTimeout(() => setNotice(null), 2600);
+  const executeConfirmedDelete = () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === 'single') {
+      const removed = deleteTarget.record;
+      setRecords((prev) => prev.filter((r) => r.id !== removed.id));
+      setSelectedIds((prev) => prev.filter((id) => id !== removed.id));
+      if (inspectRecord?.id === removed.id) {
+        setInspectRecord(null);
+      }
+      setDeleteTarget(null);
+
+      toast({
+        variant: 'warning',
+        title: isRu ? `Удалён ${removed.id}` : `Deleted ${removed.id}`,
+        description: `${removed.customer} · ${removed.company}`,
+        durationMs: 6000,
+        action: {
+          label: t.undo,
+          onClick: () => {
+            setRecords((prev) => [removed, ...prev]);
+            toast({
+              variant: 'success',
+              title: isRu ? `Восстановлен ${removed.id}` : `Restored ${removed.id}`,
+              description: removed.customer,
+            });
+          },
+        },
+      });
+    } else {
+      const count = selectedIds.length;
+      const idsToDelete = new Set(selectedIds);
+      const removedList = records.filter((r) => idsToDelete.has(r.id));
+      setRecords((prev) => prev.filter((r) => !idsToDelete.has(r.id)));
+      setSelectedIds([]);
+      if (inspectRecord && idsToDelete.has(inspectRecord.id)) {
+        setInspectRecord(null);
+      }
+      setDeleteTarget(null);
+
+      toast({
+        variant: 'warning',
+        title: isRu ? `Удалено записей: ${count}` : `Deleted ${count} account(s)`,
+        description: isRu
+          ? 'Выбранные строки удалены из таблицы.'
+          : 'Selected rows were removed from the grid.',
+        durationMs: 6000,
+        action: {
+          label: t.undo,
+          onClick: () => {
+            setRecords((prev) => [...removedList, ...prev]);
+            toast({
+              variant: 'success',
+              title: isRu ? `Восстановлено записей: ${count}` : `Restored ${count} account(s)`,
+            });
+          },
+        },
+      });
+    }
   };
 
   const handleExportSelected = () => {
     const count = selectedIds.length > 0 ? selectedIds.length : filtered.length;
-    setNotice({ text: `Exported ${count} grid records to CSV.` });
-    setTimeout(() => setNotice(null), 2400);
+    toast({
+      variant: 'success',
+      title: isRu ? 'Экспорт CSV выполнен' : 'CSV Export Ready',
+      description: isRu
+        ? `Выгружено ${count} записей аккаунтов.`
+        : `Exported ${count} grid records to CSV.`,
+    });
   };
 
   const openCreateModal = () => {
@@ -389,16 +569,26 @@ export function ThemedDataGrid({
 
     if (isCreating) {
       setRecords((prev) => [editingRecord, ...prev]);
-      setNotice({ text: `Created ${editingRecord.id} (${editingRecord.customer})` });
+      toast({
+        variant: 'success',
+        title: isRu ? `Создан ${editingRecord.id}` : `Created ${editingRecord.id}`,
+        description: `${editingRecord.customer} · ${editingRecord.company}`,
+      });
     } else {
       setRecords((prev) =>
         prev.map((r) => (r.id === editingRecord.id ? editingRecord : r))
       );
-      setNotice({ text: `Updated ${editingRecord.id} (${editingRecord.customer})` });
+      if (inspectRecord?.id === editingRecord.id) {
+        setInspectRecord(editingRecord);
+      }
+      toast({
+        variant: 'success',
+        title: isRu ? `Обновлён ${editingRecord.id}` : `Updated ${editingRecord.id}`,
+        description: `${editingRecord.customer} · $${editingRecord.mrr.toLocaleString('en-US')}/mo`,
+      });
     }
     setEditingRecord(null);
     setIsCreating(false);
-    setTimeout(() => setNotice(null), 2500);
   };
 
   const statusColor = (st: GridRecord['status']) => {
@@ -406,6 +596,8 @@ export function ThemedDataGrid({
     if (st === 'Pending') return 'var(--d-warning)';
     return 'var(--d-danger)';
   };
+
+  const formatStatus = (st: GridRecord['status']) => (isRu ? STATUS_LABELS_RU[st] : st);
 
   return (
     <div className="space-y-4">
@@ -419,6 +611,8 @@ export function ThemedDataGrid({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <FormLanguageToggle />
+
           <div
             className="inline-flex p-1 border"
             style={{
@@ -436,7 +630,7 @@ export function ThemedDataGrid({
               }}
             >
               <List className="w-3.5 h-3.5" />
-              <span>Table</span>
+              <span>{t.table}</span>
             </button>
             <button
               onClick={() => setViewMode('cards')}
@@ -447,7 +641,7 @@ export function ThemedDataGrid({
               }}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Grid</span>
+              <span>{t.grid}</span>
             </button>
           </div>
 
@@ -462,7 +656,9 @@ export function ThemedDataGrid({
             }}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export ({selectedIds.length > 0 ? selectedIds.length : filtered.length})</span>
+            <span>
+              {t.export} ({selectedIds.length > 0 ? selectedIds.length : filtered.length})
+            </span>
           </button>
 
           <button
@@ -475,37 +671,10 @@ export function ThemedDataGrid({
             }}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Account</span>
+            <span>{t.newAccount}</span>
           </button>
         </div>
       </div>
-
-      {notice && (
-        <div
-          className="px-4 py-2 text-xs font-medium border flex items-center justify-between gap-3"
-          style={{
-            backgroundColor: 'var(--d-accent-soft)',
-            borderColor: 'var(--d-border)',
-            color: 'var(--d-primary)',
-            borderRadius: 'var(--d-radius)',
-          }}
-        >
-          <span>{notice.text}</span>
-          <div className="flex items-center gap-3">
-            {notice.undoRecord && (
-              <button
-                onClick={handleUndoDelete}
-                className="underline font-semibold hover:opacity-80"
-              >
-                Undo
-              </button>
-            )}
-            <button onClick={() => setNotice(null)} aria-label="Dismiss notice">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Multi-Filter Toolbar with Searchable Checkbox Selects + Inline Checkboxes */}
       <div
@@ -528,15 +697,19 @@ export function ThemedDataGrid({
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Search account, company, country, or ID..."
+              placeholder={t.searchPlaceholder}
               className="w-full pl-8 pr-3 py-1.5 text-xs border bg-transparent outline-none"
               style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
             />
           </div>
 
           <SearchableCheckboxSelect
-            label="Plan"
-            searchPlaceholder="Search plans..."
+            label={t.plan}
+            allLabel={t.all}
+            selectVisibleLabel={t.selectVisible}
+            clearLabel={t.clear}
+            noOptionsLabel={t.noOptions}
+            searchPlaceholder={t.searchPlans}
             options={[
               { value: 'Enterprise', sub: 'Custom SLA' },
               { value: 'Growth', sub: 'Team' },
@@ -550,8 +723,12 @@ export function ThemedDataGrid({
           />
 
           <SearchableCheckboxSelect
-            label="Region"
-            searchPlaceholder="Search regions..."
+            label={t.region}
+            allLabel={t.all}
+            selectVisibleLabel={t.selectVisible}
+            clearLabel={t.clear}
+            noOptionsLabel={t.noOptions}
+            searchPlaceholder={t.searchRegions}
             options={[
               { value: 'North America', sub: 'US · CA' },
               { value: 'Europe', sub: 'EU · UK' },
@@ -565,8 +742,12 @@ export function ThemedDataGrid({
           />
 
           <SearchableCheckboxSelect
-            label="Country"
-            searchPlaceholder="Search country..."
+            label={t.country}
+            allLabel={t.all}
+            selectVisibleLabel={t.selectVisible}
+            clearLabel={t.clear}
+            noOptionsLabel={t.noOptions}
+            searchPlaceholder={t.searchCountry}
             options={countryOptions}
             selected={selectedCountries}
             onChange={(next) => {
@@ -582,7 +763,7 @@ export function ThemedDataGrid({
               style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Reset</span>
+              <span>{t.reset}</span>
             </button>
           )}
         </div>
@@ -594,7 +775,7 @@ export function ThemedDataGrid({
         >
           <div className="flex flex-wrap items-center gap-4">
             <span className="font-medium" style={{ color: 'var(--d-muted)' }}>
-              Status:
+              {t.status}:
             </span>
             {(['Active', 'Pending', 'Past Due'] as const).map((st) => {
               const checked = selectedStatuses.includes(st);
@@ -607,7 +788,7 @@ export function ThemedDataGrid({
                     className="w-3.5 h-3.5 accent-current"
                   />
                   <span className="font-medium" style={{ color: checked ? statusColor(st) : 'var(--d-text)' }}>
-                    {st}
+                    {formatStatus(st)}
                   </span>
                 </label>
               );
@@ -631,21 +812,23 @@ export function ThemedDataGrid({
 
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-3">
-              <span className="font-mono-num font-semibold">{selectedIds.length} selected</span>
+              <span className="font-mono-num font-semibold">
+                {selectedIds.length} {t.selected}
+              </span>
               <button
-                onClick={handleBulkDelete}
+                onClick={requestBulkDelete}
                 className="inline-flex items-center gap-1 font-medium hover:underline"
                 style={{ color: 'var(--d-danger)' }}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete selected</span>
+                <span>{t.deleteSelected}</span>
               </button>
               <button
                 onClick={() => setSelectedIds([])}
                 className="underline hover:opacity-80"
                 style={{ color: 'var(--d-muted)' }}
               >
-                Clear
+                {t.clear}
               </button>
             </div>
           )}
@@ -662,20 +845,20 @@ export function ThemedDataGrid({
             borderRadius: 'var(--d-radius)',
           }}
         >
-          <p className="text-sm font-medium">No accounts match the selected filters</p>
+          <p className="text-sm font-medium">{t.emptyTitle}</p>
           <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
-            Try adjusting your search query, plan checkboxes, or country filter.
+            {t.emptyDesc}
           </p>
           <button
             onClick={resetFilters}
             className="px-3.5 py-1.5 text-xs font-medium border"
             style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
           >
-            Reset All Filters
+            {t.resetAllFilters}
           </button>
         </div>
       ) : viewMode === 'cards' ? (
-        /* Responsive Card Grid Mode with Edit & Delete */
+        /* Responsive Card Grid Mode with Offcanvas Inspect, Edit & Delete Confirmation */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {pagedRows.map((row) => {
             const isSelected = selectedIds.includes(row.id);
@@ -709,19 +892,21 @@ export function ThemedDataGrid({
 
                 <div className="space-y-1.5 text-xs pt-2 border-t" style={{ borderColor: 'var(--d-border)' }}>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--d-muted)' }}>Plan · Country</span>
+                    <span style={{ color: 'var(--d-muted)' }}>
+                      {t.plan} · {t.country}
+                    </span>
                     <span className="font-medium">
                       {row.plan} · {row.country}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--d-muted)' }}>Seats</span>
+                    <span style={{ color: 'var(--d-muted)' }}>{t.colSeats}</span>
                     <span className="font-mono-num">{row.seats}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--d-muted)' }}>Status</span>
+                    <span style={{ color: 'var(--d-muted)' }}>{t.status}</span>
                     <span className="font-semibold" style={{ color: statusColor(row.status) }}>
-                      {row.status}
+                      {formatStatus(row.status)}
                     </span>
                   </div>
                 </div>
@@ -737,22 +922,31 @@ export function ThemedDataGrid({
                   </div>
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={() => setInspectRecord(row)}
+                      className="p-1.5 rounded border hover:opacity-80"
+                      style={{ borderColor: 'var(--d-border)' }}
+                      title={t.inspectAction}
+                      aria-label={`Inspect ${row.customer}`}
+                    >
+                      <PanelRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => {
                         setIsCreating(false);
                         setEditingRecord({ ...row });
                       }}
                       className="p-1.5 rounded border hover:opacity-80"
                       style={{ borderColor: 'var(--d-border)' }}
-                      title="Edit account"
+                      title={t.editAction}
                       aria-label={`Edit ${row.customer}`}
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteRow(row)}
+                      onClick={() => requestDeleteRow(row)}
                       className="p-1.5 rounded border hover:opacity-80"
                       style={{ borderColor: 'var(--d-border)', color: 'var(--d-danger)' }}
-                      title="Delete account"
+                      title={t.deleteAction}
                       aria-label={`Delete ${row.customer}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -764,7 +958,7 @@ export function ThemedDataGrid({
           })}
         </div>
       ) : (
-        /* Structured Data Table Grid Mode with Edit & Delete */
+        /* Structured Data Table Grid Mode with Offcanvas Inspect, Edit & Delete Confirmation */
         <div
           className="border overflow-hidden"
           style={{
@@ -799,16 +993,16 @@ export function ThemedDataGrid({
                       onClick={() => handleSort('customer')}
                       className="inline-flex items-center gap-1"
                     >
-                      <span>Account / Company</span>
+                      <span>{t.colAccount}</span>
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
-                  <th className="py-2.5 px-3 font-medium">Plan</th>
-                  <th className="py-2.5 px-3 font-medium">Country</th>
-                  <th className="py-2.5 px-3 font-medium">Status</th>
+                  <th className="py-2.5 px-3 font-medium">{t.plan}</th>
+                  <th className="py-2.5 px-3 font-medium">{t.country}</th>
+                  <th className="py-2.5 px-3 font-medium">{t.status}</th>
                   <th className="py-2.5 px-3 font-medium text-right">
                     <button onClick={() => handleSort('seats')} className="inline-flex items-center gap-1">
-                      <span>Seats</span>
+                      <span>{t.colSeats}</span>
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
@@ -823,11 +1017,11 @@ export function ThemedDataGrid({
                       onClick={() => handleSort('updatedAt')}
                       className="inline-flex items-center gap-1"
                     >
-                      <span>Updated</span>
+                      <span>{t.colUpdated}</span>
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
-                  <th className="py-2.5 px-3 font-medium text-right">Actions</th>
+                  <th className="py-2.5 px-3 font-medium text-right">{t.colActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: 'var(--d-border)' }}>
@@ -850,7 +1044,11 @@ export function ThemedDataGrid({
                       </td>
                       <td className="py-2.5 px-3 font-mono-num font-medium">{row.id}</td>
                       <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setInspectRecord(row)}
+                          className="flex items-center gap-2.5 text-left hover:opacity-80"
+                        >
                           <AvatarWithFallback
                             src={row.avatar}
                             name={row.customer}
@@ -862,7 +1060,7 @@ export function ThemedDataGrid({
                               {row.company} · {row.email}
                             </div>
                           </div>
-                        </div>
+                        </button>
                       </td>
                       <td className="py-2.5 px-3">{row.plan}</td>
                       <td className="py-2.5 px-3" style={{ color: 'var(--d-muted)' }}>
@@ -870,7 +1068,7 @@ export function ThemedDataGrid({
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="font-semibold" style={{ color: statusColor(row.status) }}>
-                          {row.status}
+                          {formatStatus(row.status)}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono-num">{row.seats}</td>
@@ -886,22 +1084,31 @@ export function ThemedDataGrid({
                       <td className="py-2.5 px-3 text-right">
                         <div className="inline-flex items-center gap-1">
                           <button
+                            onClick={() => setInspectRecord(row)}
+                            className="p-1.5 rounded border hover:opacity-80"
+                            style={{ borderColor: 'var(--d-border)' }}
+                            title={t.inspectAction}
+                            aria-label={`Inspect ${row.id}`}
+                          >
+                            <PanelRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => {
                               setIsCreating(false);
                               setEditingRecord({ ...row });
                             }}
                             className="p-1.5 rounded border hover:opacity-80"
                             style={{ borderColor: 'var(--d-border)' }}
-                            title="Edit row"
+                            title={t.editAction}
                             aria-label={`Edit ${row.id}`}
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteRow(row)}
+                            onClick={() => requestDeleteRow(row)}
                             className="p-1.5 rounded border hover:opacity-80"
                             style={{ borderColor: 'var(--d-border)', color: 'var(--d-danger)' }}
-                            title="Delete row"
+                            title={t.deleteAction}
                             aria-label={`Delete ${row.id}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -928,12 +1135,12 @@ export function ThemedDataGrid({
       >
         <div className="flex items-center gap-3" style={{ color: 'var(--d-muted)' }}>
           <span className="font-mono-num">
-            Showing {filtered.length === 0 ? 0 : startIndex + 1}–
-            {Math.min(startIndex + pageSize, filtered.length)} of {filtered.length}
+            {t.showing} {filtered.length === 0 ? 0 : startIndex + 1}–
+            {Math.min(startIndex + pageSize, filtered.length)} {t.of} {filtered.length}
           </span>
           <span aria-hidden="true">·</span>
           <label className="inline-flex items-center gap-1.5">
-            <span>Rows:</span>
+            <span>{t.rows}</span>
             <select
               value={pageSize}
               onChange={(e) => {
@@ -1011,7 +1218,119 @@ export function ThemedDataGrid({
         </div>
       </div>
 
-      {/* Edit / Create Account Modal */}
+      {/* Record Inspector Offcanvas Drawer */}
+      <ThemedOffcanvas
+        open={Boolean(inspectRecord)}
+        onClose={() => setInspectRecord(null)}
+        title={inspectRecord ? `${inspectRecord.id} · ${inspectRecord.customer}` : t.inspectTitle}
+        subtitle={inspectRecord ? `${inspectRecord.company} · ${inspectRecord.email}` : undefined}
+        headerActions={<FormLanguageToggle compact />}
+        footer={
+          inspectRecord && (
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => requestDeleteRow(inspectRecord)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border font-medium hover:opacity-80"
+                style={{
+                  borderColor: 'var(--d-danger)',
+                  color: 'var(--d-danger)',
+                  borderRadius: 'var(--d-radius)',
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{t.deleteAction}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreating(false);
+                  setEditingRecord({ ...inspectRecord });
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 font-medium hover:opacity-90"
+                style={{
+                  backgroundColor: 'var(--d-primary)',
+                  color: 'var(--d-primary-fg)',
+                  borderRadius: 'var(--d-radius)',
+                }}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>{t.editAction}</span>
+              </button>
+            </div>
+          )
+        }
+      >
+        {inspectRecord && (
+          <div className="space-y-5 text-xs">
+            <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: 'var(--d-border)' }}>
+              <AvatarWithFallback
+                src={inspectRecord.avatar}
+                name={inspectRecord.customer}
+                sizeClass="w-11 h-11"
+              />
+              <div className="min-w-0">
+                <div className="text-sm font-bold truncate">{inspectRecord.customer}</div>
+                <div className="truncate" style={{ color: 'var(--d-muted)' }}>
+                  {inspectRecord.company} · {inspectRecord.email}
+                </div>
+                <div className="mt-1 font-semibold" style={{ color: statusColor(inspectRecord.status) }}>
+                  {formatStatus(inspectRecord.status)}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                className="p-3 border"
+                style={{
+                  backgroundColor: 'var(--d-surface-muted)',
+                  borderColor: 'var(--d-border)',
+                  borderRadius: 'var(--d-radius)',
+                }}
+              >
+                <div style={{ color: 'var(--d-muted)' }}>MRR</div>
+                <div className="text-lg font-bold font-mono-num mt-1">
+                  ${inspectRecord.mrr.toLocaleString('en-US')}
+                </div>
+              </div>
+              <div
+                className="p-3 border"
+                style={{
+                  backgroundColor: 'var(--d-surface-muted)',
+                  borderColor: 'var(--d-border)',
+                  borderRadius: 'var(--d-radius)',
+                }}
+              >
+                <div style={{ color: 'var(--d-muted)' }}>{t.annualArr}</div>
+                <div className="text-lg font-bold font-mono-num mt-1">
+                  ${(inspectRecord.mrr * 12).toLocaleString('en-US')}
+                </div>
+              </div>
+            </div>
+
+            <div className="divide-y border-t border-b" style={{ borderColor: 'var(--d-border)' }}>
+              {[
+                { k: 'ID', v: inspectRecord.id, mono: true },
+                { k: t.plan, v: inspectRecord.plan },
+                { k: t.region, v: inspectRecord.region },
+                { k: t.country, v: inspectRecord.country },
+                { k: t.colSeats, v: String(inspectRecord.seats), mono: true },
+                { k: t.billingCycle, v: t.monthly },
+                { k: t.colUpdated, v: inspectRecord.updatedAt, mono: true },
+              ].map((item) => (
+                <div key={item.k} className="py-2.5 flex items-center justify-between gap-3">
+                  <span style={{ color: 'var(--d-muted)' }}>{item.k}</span>
+                  <span className={`font-medium ${item.mono ? 'font-mono-num' : ''}`}>{item.v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </ThemedOffcanvas>
+
+      {/* Edit / Create Account Modal with RU/EN Switcher */}
       {editingRecord && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
@@ -1028,28 +1347,31 @@ export function ThemedDataGrid({
               borderRadius: 'var(--d-radius)',
             }}
           >
-            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--d-border)' }}>
+            <div className="flex items-start justify-between gap-3 pb-3 border-b" style={{ borderColor: 'var(--d-border)' }}>
               <div>
                 <h2 className="text-base font-bold">
-                  {isCreating ? 'New Account' : `Edit ${editingRecord.id}`}
+                  {isCreating ? t.createTitle : `${t.editTitle} ${editingRecord.id}`}
                 </h2>
                 <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
-                  Update subscription tier, status, seats, or monthly billing
+                  {t.modalDesc}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditingRecord(null)}
-                className="p-1 rounded hover:opacity-75"
-                aria-label="Close modal"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <FormLanguageToggle compact />
+                <button
+                  type="button"
+                  onClick={() => setEditingRecord(null)}
+                  className="p-1 rounded hover:opacity-75"
+                  aria-label="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <label className="space-y-1">
-                <span className="font-medium">Customer Name</span>
+                <span className="font-medium">{t.fieldCustomer}</span>
                 <input
                   required
                   value={editingRecord.customer}
@@ -1063,7 +1385,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Company</span>
+                <span className="font-medium">{t.fieldCompany}</span>
                 <input
                   required
                   value={editingRecord.company}
@@ -1077,7 +1399,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1 sm:col-span-2">
-                <span className="font-medium">Email</span>
+                <span className="font-medium">{t.fieldEmail}</span>
                 <input
                   type="email"
                   required
@@ -1092,7 +1414,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Plan</span>
+                <span className="font-medium">{t.fieldPlan}</span>
                 <select
                   value={editingRecord.plan}
                   onChange={(e) =>
@@ -1111,7 +1433,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Status</span>
+                <span className="font-medium">{t.fieldStatus}</span>
                 <select
                   value={editingRecord.status}
                   onChange={(e) =>
@@ -1123,14 +1445,14 @@ export function ThemedDataGrid({
                   className="w-full px-2.5 py-1.5 border bg-transparent outline-none"
                   style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
                 >
-                  <option value="Active" className="text-slate-900">Active</option>
-                  <option value="Pending" className="text-slate-900">Pending</option>
-                  <option value="Past Due" className="text-slate-900">Past Due</option>
+                  <option value="Active" className="text-slate-900">{formatStatus('Active')}</option>
+                  <option value="Pending" className="text-slate-900">{formatStatus('Pending')}</option>
+                  <option value="Past Due" className="text-slate-900">{formatStatus('Past Due')}</option>
                 </select>
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Region</span>
+                <span className="font-medium">{t.fieldRegion}</span>
                 <select
                   value={editingRecord.region}
                   onChange={(e) =>
@@ -1149,7 +1471,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Country</span>
+                <span className="font-medium">{t.fieldCountry}</span>
                 <input
                   value={editingRecord.country}
                   onChange={(e) =>
@@ -1161,7 +1483,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Seats</span>
+                <span className="font-medium">{t.fieldSeats}</span>
                 <input
                   type="number"
                   min={1}
@@ -1175,7 +1497,7 @@ export function ThemedDataGrid({
               </label>
 
               <label className="space-y-1">
-                <span className="font-medium">Monthly MRR ($)</span>
+                <span className="font-medium">{t.fieldMrr}</span>
                 <input
                   type="number"
                   min={0}
@@ -1196,7 +1518,7 @@ export function ThemedDataGrid({
                 className="px-3.5 py-1.5 text-xs font-medium border"
                 style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 type="submit"
@@ -1208,10 +1530,87 @@ export function ThemedDataGrid({
                 }}
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>{isCreating ? 'Create Account' : 'Save Changes'}</span>
+                <span>{isCreating ? t.createBtn : t.saveBtn}</span>
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal (Single & Bulk) with RU/EN Switcher */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 backdrop-blur-xs p-4"
+          onClick={() => setDeleteTarget(null)}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-heading"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md border shadow-2xl p-5 space-y-4"
+            style={{
+              backgroundColor: 'var(--d-surface)',
+              borderColor: 'var(--d-border)',
+              color: 'var(--d-text)',
+              borderRadius: 'var(--d-radius)',
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: 'var(--d-surface-muted)',
+                    color: 'var(--d-danger)',
+                  }}
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 id="delete-confirm-heading" className="text-sm font-bold">
+                    {t.deleteConfirmTitle}
+                  </h2>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--d-muted)' }}>
+                    {deleteTarget.type === 'single'
+                      ? t.deleteSingleDesc(deleteTarget.record)
+                      : t.deleteBulkDesc(deleteTarget.count)}
+                  </p>
+                </div>
+              </div>
+              <FormLanguageToggle compact />
+            </div>
+
+            <div
+              className="pt-3 border-t flex items-center justify-end gap-2"
+              style={{ borderColor: 'var(--d-border)' }}
+            >
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="px-3.5 py-1.5 text-xs font-medium border hover:opacity-80"
+                style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={executeConfirmedDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                style={{
+                  backgroundColor: 'var(--d-danger)',
+                  borderRadius: 'var(--d-radius)',
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>
+                  {deleteTarget.type === 'single'
+                    ? t.deleteBtn
+                    : t.deleteBulkBtn(deleteTarget.count)}
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

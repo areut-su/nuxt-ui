@@ -5,6 +5,7 @@ import {
   Home,
   Inbox,
   PanelLeft,
+  PanelRight,
   Plus,
   Search,
   Send,
@@ -17,7 +18,10 @@ import {
   REVENUE_SERIES,
   type PeriodRange,
 } from '../../data/mockDashboardData';
+import { useFormLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from '../shared/AvatarWithFallback';
+import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
@@ -26,9 +30,13 @@ type UPanel = 'home' | 'markets' | 'inbox' | 'customers-grid' | 'customers-cards
 
 interface Props {
   onOpenCommand: () => void;
+  onOpenOffcanvas: () => void;
 }
 
-export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
+export function NuxtUiDashboardPage({ onOpenCommand, onOpenOffcanvas }: Props) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
   const [panel, setPanel] = useState<UPanel>('home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [range, setRange] = useState<PeriodRange>('30d');
@@ -37,6 +45,8 @@ export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
   const [selectedMsgId, setSelectedMsgId] = useState(NUXT_UI_INBOX[0].id);
   const [replyText, setReplyText] = useState('');
   const [sentReplies, setSentReplies] = useState<Record<string, string[]>>({});
+  const [projectTitle, setProjectTitle] = useState('Nuxt UI Dashboard');
+  const [webhookUrl, setWebhookUrl] = useState('https://api.nuxt-ui.dev/hooks/billing');
 
   const unreadCount = messages.filter((m) => m.unread).length;
   const activeMessage = messages.find((m) => m.id === selectedMsgId) ?? messages[0];
@@ -86,6 +96,11 @@ export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
       [activeMessage.id]: [...(prev[activeMessage.id] ?? []), replyText.trim()],
     }));
     setReplyText('');
+    toast({
+      variant: 'success',
+      title: isRu ? 'Ответ отправлен' : 'Reply sent',
+      description: `${isRu ? 'Получатель' : 'To'}: ${activeMessage.from}`,
+    });
   };
 
   return (
@@ -193,6 +208,16 @@ export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
             )}
 
             <button
+              onClick={onOpenOffcanvas}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border hover:opacity-80 whitespace-nowrap"
+              style={{ borderColor: 'var(--d-border)' }}
+              title="Open Offcanvas / Slideover"
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Offcanvas</span>
+            </button>
+
+            <button
               onClick={() => setPanel('customers-grid')}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-opacity hover:opacity-90"
               style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
@@ -284,11 +309,21 @@ export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
               </div>
 
               <div className="border rounded-lg p-3 space-y-3" style={{ borderColor: 'var(--d-border)', backgroundColor: 'var(--d-surface)' }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium" style={{ color: 'var(--d-muted)' }}>
+                    {isRu ? `Ответ для ${activeMessage.from}` : `Reply to ${activeMessage.from}`}
+                  </span>
+                  <FormLanguageToggle compact />
+                </div>
                 <textarea
                   rows={3}
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={`Reply to ${activeMessage.from}...`}
+                  placeholder={
+                    isRu
+                      ? `Напишите ответ для ${activeMessage.from}...`
+                      : `Reply to ${activeMessage.from}...`
+                  }
                   className="w-full text-xs bg-transparent outline-none resize-none"
                 />
                 <div className="flex justify-end">
@@ -298,7 +333,7 @@ export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
                     style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Send Reply</span>
+                    <span>{isRu ? 'Отправить ответ' : 'Send Reply'}</span>
                   </button>
                 </div>
               </div>
@@ -324,26 +359,79 @@ export function NuxtUiDashboardPage({ onOpenCommand }: Props) {
           </div>
         ) : panel === 'settings' ? (
           <div className="p-6">
-            <div
-              className="max-w-xl p-6 border rounded-lg space-y-4"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                toast({
+                  variant: 'success',
+                  title: isRu ? 'Настройки Nuxt UI сохранены' : 'Nuxt UI settings saved',
+                  description: projectTitle,
+                });
+              }}
+              className="max-w-xl p-6 border rounded-lg space-y-4 text-xs"
               style={{
                 backgroundColor: 'var(--d-surface)',
                 borderColor: 'var(--d-border)',
                 borderRadius: 'var(--d-radius)',
               }}
             >
-              <h2 className="text-base font-semibold">Nuxt UI v3 Semantic Tokens</h2>
-              <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
-                Primary, neutral, and surface tokens update dynamically when switching themes in the top showcase bar.
-              </p>
-              <button
-                onClick={() => setPanel('customers-grid')}
-                className="px-3.5 py-2 text-xs font-medium rounded-md"
-                style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
-              >
-                Explore Paginated Grid
-              </button>
-            </div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold">
+                    {isRu ? 'Настройки и токены Nuxt UI v3' : 'Nuxt UI v3 Semantic Tokens'}
+                  </h2>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--d-muted)' }}>
+                    {isRu
+                      ? 'Основные параметры проекта и уведомлений'
+                      : 'Primary, neutral, and surface tokens update dynamically when switching themes.'}
+                  </p>
+                </div>
+                <FormLanguageToggle compact />
+              </div>
+
+              <label className="block space-y-1.5">
+                <span className="font-medium">
+                  {isRu ? 'Название проекта' : 'Project Name'}
+                </span>
+                <input
+                  required
+                  value={projectTitle}
+                  onChange={(e) => setProjectTitle(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md bg-transparent outline-none"
+                  style={{ borderColor: 'var(--d-border)' }}
+                />
+              </label>
+
+              <label className="block space-y-1.5">
+                <span className="font-medium">
+                  {isRu ? 'Webhook URL для событий' : 'Event Webhook URL'}
+                </span>
+                <input
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md bg-transparent outline-none font-mono-num"
+                  style={{ borderColor: 'var(--d-border)' }}
+                />
+              </label>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="submit"
+                  className="px-3.5 py-2 text-xs font-medium rounded-md hover:opacity-90"
+                  style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
+                >
+                  {isRu ? 'Сохранить' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanel('customers-grid')}
+                  className="px-3.5 py-2 text-xs font-medium rounded-md border"
+                  style={{ borderColor: 'var(--d-border)' }}
+                >
+                  {isRu ? 'Открыть Grid' : 'Explore Paginated Grid'}
+                </button>
+              </div>
+            </form>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">

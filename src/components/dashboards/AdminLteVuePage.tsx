@@ -5,6 +5,7 @@ import {
   Cpu,
   Layout,
   Menu,
+  PanelRight,
   PieChart,
   Search,
   ShoppingCart,
@@ -19,7 +20,10 @@ import {
   REVENUE_SERIES,
   type PeriodRange,
 } from '../../data/mockDashboardData';
+import { useFormLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from '../shared/AvatarWithFallback';
+import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import {
   InteractiveAreaChart,
   InteractiveDonutChart,
@@ -27,6 +31,7 @@ import {
 } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
+import { ThemedOffcanvas } from '../shared/ThemedOffcanvas';
 
 type AdminPage =
   | 'v2'
@@ -39,6 +44,7 @@ type AdminPage =
 
 interface Props {
   onOpenCommand: () => void;
+  onOpenOffcanvas: () => void;
 }
 
 const MENU_ITEMS: SidebarMenuItem[] = [
@@ -72,7 +78,10 @@ const MENU_ITEMS: SidebarMenuItem[] = [
   },
 ];
 
-export function AdminLteVuePage({ onOpenCommand }: Props) {
+export function AdminLteVuePage({ onOpenCommand, onOpenOffcanvas }: Props) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [controlOpen, setControlOpen] = useState(false);
   const [activePage, setActivePage] = useState<AdminPage>('v2');
@@ -198,7 +207,7 @@ export function AdminLteVuePage({ onOpenCommand }: Props) {
             </button>
 
             <button
-              onClick={() => setControlOpen((o) => !o)}
+              onClick={() => setControlOpen(true)}
               className="px-2.5 py-1.5 rounded border text-xs font-medium flex items-center gap-1.5"
               style={{
                 borderColor: 'var(--d-border)',
@@ -207,7 +216,19 @@ export function AdminLteVuePage({ onOpenCommand }: Props) {
               }}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Control Sidebar</span>
+              <span className="hidden sm:inline">
+                {isRu ? 'Control Offcanvas' : 'Control Offcanvas'}
+              </span>
+            </button>
+
+            <button
+              onClick={onOpenOffcanvas}
+              className="px-2.5 py-1.5 rounded border text-xs font-medium flex items-center gap-1.5"
+              style={{ borderColor: 'var(--d-border)' }}
+              title="Open Workspace Offcanvas"
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Offcanvas</span>
             </button>
           </div>
         </header>
@@ -244,7 +265,14 @@ export function AdminLteVuePage({ onOpenCommand }: Props) {
             )}
 
             {activePage === 'settings' && (
-              <div
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  toast({
+                    variant: 'success',
+                    title: isRu ? 'Настройки AdminLTE применены' : 'AdminLTE settings applied',
+                  });
+                }}
                 className="max-w-xl border rounded p-5 space-y-4 text-xs"
                 style={{
                   backgroundColor: 'var(--d-surface)',
@@ -252,9 +280,14 @@ export function AdminLteVuePage({ onOpenCommand }: Props) {
                   borderRadius: 'var(--d-radius)',
                 }}
               >
-                <h2 className="text-sm font-semibold">AdminLTE Interface Controls</h2>
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold">
+                    {isRu ? 'Управление интерфейсом AdminLTE' : 'AdminLTE Interface Controls'}
+                  </h2>
+                  <FormLanguageToggle compact />
+                </div>
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span>Compact Orders Table</span>
+                  <span>{isRu ? 'Компактная таблица заказов' : 'Compact Orders Table'}</span>
                   <input
                     type="checkbox"
                     checked={compactTable}
@@ -262,14 +295,23 @@ export function AdminLteVuePage({ onOpenCommand }: Props) {
                   />
                 </label>
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span>Show Recap Footer KPIs</span>
+                  <span>{isRu ? 'Показывать итоговые KPI в отчёте' : 'Show Recap Footer KPIs'}</span>
                   <input
                     type="checkbox"
                     checked={showFooterStats}
                     onChange={(e) => setShowFooterStats(e.target.checked)}
                   />
                 </label>
-              </div>
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-3.5 py-1.5 rounded font-medium hover:opacity-90"
+                    style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
+                  >
+                    {isRu ? 'Применить' : 'Apply Settings'}
+                  </button>
+                </div>
+              </form>
             )}
 
             {(activePage === 'v2' || activePage === 'v1' || activePage === 'orders' || activePage === 'widgets') && (
@@ -525,47 +567,65 @@ export function AdminLteVuePage({ onOpenCommand }: Props) {
             )}
           </div>
 
-          {controlOpen && (
-            <aside
-              className="w-64 shrink-0 border-l p-4 space-y-4 text-xs"
-              style={{
-                backgroundColor: 'var(--d-sidebar)',
-                borderColor: 'var(--d-sidebar-border)',
-                color: 'var(--d-sidebar-text)',
-              }}
-            >
-              <div className="font-semibold text-sm border-b pb-2" style={{ borderColor: 'var(--d-sidebar-border)' }}>
-                Customize AdminLTE
-              </div>
-
-              <label className="flex items-center justify-between cursor-pointer">
-                <span>Compact Orders Table</span>
+          <ThemedOffcanvas
+            open={controlOpen}
+            onClose={() => setControlOpen(false)}
+            side="right"
+            size="sm"
+            title={isRu ? 'Настройка AdminLTE (Offcanvas)' : 'Customize AdminLTE (Offcanvas)'}
+            subtitle="Bootstrap 5.3 Offcanvas Drawer"
+            headerActions={<FormLanguageToggle compact />}
+          >
+            <div className="space-y-4 text-xs">
+              <label
+                className="flex items-center justify-between p-3 border cursor-pointer"
+                style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
+              >
+                <span>{isRu ? 'Компактная таблица заказов' : 'Compact Orders Table'}</span>
                 <input
                   type="checkbox"
                   checked={compactTable}
-                  onChange={(e) => setCompactTable(e.target.checked)}
+                  onChange={(e) => {
+                    setCompactTable(e.target.checked);
+                    toast({
+                      variant: 'info',
+                      title: isRu ? 'Плотность таблицы обновлена' : 'Table density updated',
+                    });
+                  }}
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer">
-                <span>Show Recap Footer KPIs</span>
+              <label
+                className="flex items-center justify-between p-3 border cursor-pointer"
+                style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
+              >
+                <span>{isRu ? 'Показывать итоговые KPI' : 'Show Recap Footer KPIs'}</span>
                 <input
                   type="checkbox"
                   checked={showFooterStats}
-                  onChange={(e) => setShowFooterStats(e.target.checked)}
+                  onChange={(e) => {
+                    setShowFooterStats(e.target.checked);
+                    toast({
+                      variant: 'info',
+                      title: isRu ? 'Блок KPI обновлён' : 'Recap KPIs toggled',
+                    });
+                  }}
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer">
-                <span>Collapsed Left Sidebar</span>
+              <label
+                className="flex items-center justify-between p-3 border cursor-pointer"
+                style={{ borderColor: 'var(--d-border)', borderRadius: 'var(--d-radius)' }}
+              >
+                <span>{isRu ? 'Свернуть левое меню' : 'Collapsed Left Sidebar'}</span>
                 <input
                   type="checkbox"
                   checked={sidebarCollapsed}
                   onChange={(e) => setSidebarCollapsed(e.target.checked)}
                 />
               </label>
-            </aside>
-          )}
+            </div>
+          </ThemedOffcanvas>
         </div>
       </div>
     </div>

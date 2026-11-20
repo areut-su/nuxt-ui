@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { getGlobalTheme, getStyleMeta } from './data/stylesRegistry';
+import { LocaleProvider } from './context/LocaleContext';
+import { ToastProvider } from './context/ToastContext';
 import { GalleryHome } from './components/GalleryHome';
 import { ShowcaseTopBar } from './components/ShowcaseTopBar';
 import { CommandPaletteModal } from './components/shared/CommandPaletteModal';
+import { GlobalOffcanvasDrawer } from './components/shared/GlobalOffcanvasDrawer';
 import { NuxtShadcnAdminPage } from './components/dashboards/NuxtShadcnAdminPage';
 import { MiguelShadcnPage } from './components/dashboards/MiguelShadcnPage';
 import { ShadcnBlocksPage } from './components/dashboards/ShadcnBlocksPage';
@@ -33,6 +36,7 @@ export default function App() {
     parseHashRoute()
   );
   const [commandOpen, setCommandOpen] = useState(false);
+  const [offcanvasOpen, setOffcanvasOpen] = useState(false);
 
   const [globalThemeId, setGlobalThemeId] = useState<string>(() => {
     try {
@@ -82,69 +86,105 @@ export default function App() {
   };
 
   const activeTheme = getGlobalTheme(globalThemeId);
-
-  if (!activeStyleId) {
-    return (
-      <>
-        <GalleryHome
-          globalTheme={activeTheme}
-          onSelectGlobalTheme={setGlobalThemeId}
-          onOpenStyle={navigateToStyle}
-        />
-        <CommandPaletteModal
-          open={commandOpen}
-          onClose={() => setCommandOpen(false)}
-          activeStyleId={null}
-          activeThemeId={activeTheme.id}
-          onSelectStyle={navigateToStyle}
-          onSelectTheme={setGlobalThemeId}
-          onGoHome={navigateHome}
-        />
-      </>
-    );
-  }
-
-  const styleMeta = getStyleMeta(activeStyleId);
-  const cssVars = themeTokensToStyle(activeTheme.tokens, styleMeta.radiusToken);
+  const styleMeta = activeStyleId ? getStyleMeta(activeStyleId) : null;
+  const radiusToken = styleMeta ? styleMeta.radiusToken : '0.5rem';
+  const cssVars = themeTokensToStyle(activeTheme.tokens, radiusToken);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <ShowcaseTopBar
-        activeStyle={styleMeta}
-        activeTheme={activeTheme}
-        onGoHome={navigateHome}
-        onSelectStyle={navigateToStyle}
-        onSelectTheme={setGlobalThemeId}
-        onOpenCommand={() => setCommandOpen(true)}
-      />
+    <LocaleProvider>
+      <ToastProvider activeTheme={activeTheme} radiusToken={radiusToken}>
+        {!activeStyleId || !styleMeta ? (
+          <>
+            <GalleryHome
+              globalTheme={activeTheme}
+              onSelectGlobalTheme={setGlobalThemeId}
+              onOpenStyle={navigateToStyle}
+              onOpenOffcanvas={() => setOffcanvasOpen(true)}
+            />
+            <div style={cssVars}>
+              <GlobalOffcanvasDrawer
+                open={offcanvasOpen}
+                onClose={() => setOffcanvasOpen(false)}
+                activeTheme={activeTheme}
+                onSelectTheme={setGlobalThemeId}
+                contextLabel="AdminKit Showcase"
+              />
+            </div>
+            <CommandPaletteModal
+              open={commandOpen}
+              onClose={() => setCommandOpen(false)}
+              activeStyleId={null}
+              activeThemeId={activeTheme.id}
+              onSelectStyle={navigateToStyle}
+              onSelectTheme={setGlobalThemeId}
+              onGoHome={navigateHome}
+            />
+          </>
+        ) : (
+          <div className="min-h-screen flex flex-col">
+            <ShowcaseTopBar
+              activeStyle={styleMeta}
+              activeTheme={activeTheme}
+              onGoHome={navigateHome}
+              onSelectStyle={navigateToStyle}
+              onSelectTheme={setGlobalThemeId}
+              onOpenCommand={() => setCommandOpen(true)}
+              onOpenOffcanvas={() => setOffcanvasOpen(true)}
+            />
 
-      <div style={cssVars} className="flex-1 flex flex-col">
-        {activeStyleId === 'nuxt-shadcn' && (
-          <NuxtShadcnAdminPage onOpenCommand={() => setCommandOpen(true)} />
-        )}
-        {activeStyleId === 'miguel-shadcn' && (
-          <MiguelShadcnPage onOpenCommand={() => setCommandOpen(true)} />
-        )}
-        {activeStyleId === 'shadcn-blocks' && (
-          <ShadcnBlocksPage onOpenCommand={() => setCommandOpen(true)} />
-        )}
-        {activeStyleId === 'adminlte-vue' && (
-          <AdminLteVuePage onOpenCommand={() => setCommandOpen(true)} />
-        )}
-        {activeStyleId === 'nuxt-ui' && (
-          <NuxtUiDashboardPage onOpenCommand={() => setCommandOpen(true)} />
-        )}
-      </div>
+            <div style={cssVars} className="flex-1 flex flex-col">
+              {activeStyleId === 'nuxt-shadcn' && (
+                <NuxtShadcnAdminPage
+                  onOpenCommand={() => setCommandOpen(true)}
+                  onOpenOffcanvas={() => setOffcanvasOpen(true)}
+                />
+              )}
+              {activeStyleId === 'miguel-shadcn' && (
+                <MiguelShadcnPage
+                  onOpenCommand={() => setCommandOpen(true)}
+                  onOpenOffcanvas={() => setOffcanvasOpen(true)}
+                />
+              )}
+              {activeStyleId === 'shadcn-blocks' && (
+                <ShadcnBlocksPage
+                  onOpenCommand={() => setCommandOpen(true)}
+                  onOpenOffcanvas={() => setOffcanvasOpen(true)}
+                />
+              )}
+              {activeStyleId === 'adminlte-vue' && (
+                <AdminLteVuePage
+                  onOpenCommand={() => setCommandOpen(true)}
+                  onOpenOffcanvas={() => setOffcanvasOpen(true)}
+                />
+              )}
+              {activeStyleId === 'nuxt-ui' && (
+                <NuxtUiDashboardPage
+                  onOpenCommand={() => setCommandOpen(true)}
+                  onOpenOffcanvas={() => setOffcanvasOpen(true)}
+                />
+              )}
 
-      <CommandPaletteModal
-        open={commandOpen}
-        onClose={() => setCommandOpen(false)}
-        activeStyleId={activeStyleId}
-        activeThemeId={activeTheme.id}
-        onSelectStyle={navigateToStyle}
-        onSelectTheme={setGlobalThemeId}
-        onGoHome={navigateHome}
-      />
-    </div>
+              <GlobalOffcanvasDrawer
+                open={offcanvasOpen}
+                onClose={() => setOffcanvasOpen(false)}
+                activeTheme={activeTheme}
+                onSelectTheme={setGlobalThemeId}
+                contextLabel={styleMeta.name}
+              />
+            </div>
+
+            <CommandPaletteModal
+              open={commandOpen}
+              onClose={() => setCommandOpen(false)}
+              activeStyleId={activeStyleId}
+              activeThemeId={activeTheme.id}
+              onSelectStyle={navigateToStyle}
+              onSelectTheme={setGlobalThemeId}
+              onGoHome={navigateHome}
+            />
+          </div>
+        )}
+      </ToastProvider>
+    </LocaleProvider>
   );
 }

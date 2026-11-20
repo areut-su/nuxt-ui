@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   Home,
   PanelLeft,
+  PanelRight,
   Search,
   Settings,
   ShieldCheck,
@@ -17,7 +18,10 @@ import {
   TRANSACTIONS_DATA,
   type PeriodRange,
 } from '../../data/mockDashboardData';
+import { useFormLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from '../shared/AvatarWithFallback';
+import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
@@ -26,6 +30,7 @@ type MiguelPage = 'home' | 'grid-accounts' | 'grid-cards' | 'team' | 'audit';
 
 interface Props {
   onOpenCommand: () => void;
+  onOpenOffcanvas: () => void;
 }
 
 const MENU_ITEMS: SidebarMenuItem[] = [
@@ -55,7 +60,10 @@ const MENU_ITEMS: SidebarMenuItem[] = [
   },
 ];
 
-export function MiguelShadcnPage({ onOpenCommand }: Props) {
+export function MiguelShadcnPage({ onOpenCommand, onOpenOffcanvas }: Props) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
   const [workspace, setWorkspace] = useState<'Acme Corp' | 'Nordic Labs'>('Acme Corp');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeNav, setActiveNav] = useState<MiguelPage>('home');
@@ -171,6 +179,16 @@ export function MiguelShadcnPage({ onOpenCommand }: Props) {
               <kbd className="font-mono-num text-[10px] px-1.5 py-0.5 rounded border" style={{ borderColor: 'var(--d-border)' }}>
                 ⌘K
               </kbd>
+            </button>
+
+            <button
+              onClick={onOpenOffcanvas}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium hover:opacity-80 whitespace-nowrap"
+              style={{ borderColor: 'var(--d-border)' }}
+              aria-label="Open Offcanvas Drawer"
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Offcanvas</span>
             </button>
 
             <button
@@ -300,10 +318,17 @@ export function MiguelShadcnPage({ onOpenCommand }: Props) {
                   style={{ backgroundColor: 'var(--d-surface)', borderColor: 'var(--d-border)' }}
                 >
                   <div>
-                    <h2 className="text-sm font-semibold">Team Permissions</h2>
-                    <p className="text-xs mb-4" style={{ color: 'var(--d-muted)' }}>
-                      Change member roles inline
-                    </p>
+                    <div className="flex items-start justify-between gap-2 mb-4">
+                      <div>
+                        <h2 className="text-sm font-semibold">
+                          {isRu ? 'Права команды' : 'Team Permissions'}
+                        </h2>
+                        <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
+                          {isRu ? 'Изменяйте роли участников на лету' : 'Change member roles inline'}
+                        </p>
+                      </div>
+                      <FormLanguageToggle compact />
+                    </div>
 
                     <div className="space-y-3.5">
                       {[
@@ -323,9 +348,15 @@ export function MiguelShadcnPage({ onOpenCommand }: Props) {
                           </div>
                           <select
                             value={teamRoles[member.name]}
-                            onChange={(e) =>
-                              setTeamRoles((prev) => ({ ...prev, [member.name]: e.target.value }))
-                            }
+                            onChange={(e) => {
+                              const nextRole = e.target.value;
+                              setTeamRoles((prev) => ({ ...prev, [member.name]: nextRole }));
+                              toast({
+                                variant: 'success',
+                                title: isRu ? 'Роль обновлена' : 'Role updated',
+                                description: `${member.name} → ${nextRole}`,
+                              });
+                            }}
                             className="text-xs px-2 py-1 rounded border bg-transparent outline-none"
                             style={{ borderColor: 'var(--d-border)' }}
                           >

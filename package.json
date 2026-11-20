@@ -1,7 +1,27 @@
 {
-  "name": "react-example",
-  "private": true,
-  "version": "0.0.0",
+  "name": "nuxt-ui-admin-showcase",
+  "private": false,
+  "version": "1.0.0",
+  "description": "Интерактивная витрина пяти MIT-дизайн-систем админ-дашбордов Vue / Nuxt с 14 общими цветовыми схемами, боковым меню с подпунктами и таблицами Data Grid.",
+  "license": "MIT",
+  "homepage": "https://github.com/areut-su/nuxt-ui#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/areut-su/nuxt-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/areut-su/nuxt-ui/issues"
+  },
+  "keywords": [
+    "nuxt",
+    "nuxt-ui",
+    "shadcn-vue",
+    "adminlte",
+    "admin-dashboard",
+    "design-system",
+    "tailwindcss",
+    "mit"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

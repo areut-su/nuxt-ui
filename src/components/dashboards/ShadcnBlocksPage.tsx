@@ -6,6 +6,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   PanelLeft,
+  PanelRight,
   PlusCircle,
   Search,
   Settings,
@@ -17,7 +18,10 @@ import {
   type BlockDocumentRow,
   type PeriodRange,
 } from '../../data/mockDashboardData';
+import { useFormLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from '../shared/AvatarWithFallback';
+import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
@@ -26,6 +30,7 @@ type BlocksPageId = 'dashboard' | 'lifecycle' | 'grid-table' | 'grid-cards' | 'd
 
 interface Props {
   onOpenCommand: () => void;
+  onOpenOffcanvas: () => void;
 }
 
 const MENU_ITEMS: SidebarMenuItem[] = [
@@ -50,14 +55,17 @@ const MENU_ITEMS: SidebarMenuItem[] = [
   },
 ];
 
-export function ShadcnBlocksPage({ onOpenCommand }: Props) {
+export function ShadcnBlocksPage({ onOpenCommand, onOpenOffcanvas }: Props) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
   const [collapsed, setCollapsed] = useState(false);
   const [activeNav, setActiveNav] = useState<BlocksPageId>('dashboard');
   const [range, setRange] = useState<PeriodRange>('90d');
   const [tableTab, setTableTab] = useState<'all' | BlockDocumentRow['tab']>('all');
   const [docs, setDocs] = useState(BLOCK_DOCUMENTS_DATA);
   const [docSearch, setDocSearch] = useState('');
-  const [quickCreated, setQuickCreated] = useState(false);
+  const [blockOrgName, setBlockOrgName] = useState('Acme Inc.');
 
   const visibleDocs = useMemo(() => {
     const q = docSearch.trim().toLowerCase();
@@ -86,8 +94,11 @@ export function ShadcnBlocksPage({ onOpenCommand }: Props) {
       },
       ...prev,
     ]);
-    setQuickCreated(true);
-    setTimeout(() => setQuickCreated(false), 2000);
+    toast({
+      variant: 'success',
+      title: isRu ? `Добавлена строка #${nextId}` : `Added Spec #${nextId}`,
+      description: isRu ? 'Создано через Quick Create' : 'Created via Quick Create',
+    });
   };
 
   const toggleDocStatus = (id: number) => {
@@ -209,11 +220,14 @@ export function ShadcnBlocksPage({ onOpenCommand }: Props) {
             <h1 className="text-sm font-medium capitalize">{activeNav.replace('-', ' ')} · Block 01</h1>
           </div>
 
-          {quickCreated && (
-            <span className="text-xs font-medium" style={{ color: 'var(--d-success)' }}>
-              Added new row via Quick Create
-            </span>
-          )}
+          <button
+            onClick={onOpenOffcanvas}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border hover:opacity-80 whitespace-nowrap"
+            style={{ borderColor: 'var(--d-border)' }}
+          >
+            <PanelRight className="w-3.5 h-3.5" />
+            <span>Offcanvas</span>
+          </button>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
@@ -236,26 +250,66 @@ export function ShadcnBlocksPage({ onOpenCommand }: Props) {
           )}
 
           {activeNav === 'settings' && (
-            <div
-              className="max-w-xl p-6 border space-y-4"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                toast({
+                  variant: 'success',
+                  title: isRu ? 'Параметры Block 01 сохранены' : 'Block 01 preferences saved',
+                  description: blockOrgName,
+                });
+              }}
+              className="max-w-xl p-6 border space-y-4 text-xs"
               style={{
                 backgroundColor: 'var(--d-surface)',
                 borderColor: 'var(--d-border)',
                 borderRadius: 'var(--d-radius)',
               }}
             >
-              <h2 className="text-base font-semibold">Block 01 Preferences</h2>
-              <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
-                SidebarInset, CSS OKLCH tokens, and Reka UI primitive settings.
-              </p>
-              <button
-                onClick={() => setActiveNav('grid-table')}
-                className="px-3.5 py-2 text-xs font-medium rounded-md"
-                style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
-              >
-                Open Paginated Grid
-              </button>
-            </div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold">
+                    {isRu ? 'Настройки Block 01' : 'Block 01 Preferences'}
+                  </h2>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--d-muted)' }}>
+                    {isRu
+                      ? 'Параметры контейнера SidebarInset и рабочего пространства'
+                      : 'SidebarInset, CSS OKLCH tokens, and Reka UI primitive settings.'}
+                  </p>
+                </div>
+                <FormLanguageToggle compact />
+              </div>
+
+              <label className="block space-y-1.5">
+                <span className="font-medium">
+                  {isRu ? 'Название организации' : 'Organization Name'}
+                </span>
+                <input
+                  value={blockOrgName}
+                  onChange={(e) => setBlockOrgName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md bg-transparent outline-none"
+                  style={{ borderColor: 'var(--d-border)' }}
+                />
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="px-3.5 py-2 text-xs font-medium rounded-md"
+                  style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
+                >
+                  {isRu ? 'Сохранить' : 'Save Preferences'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveNav('grid-table')}
+                  className="px-3.5 py-2 text-xs font-medium rounded-md border"
+                  style={{ borderColor: 'var(--d-border)' }}
+                >
+                  {isRu ? 'Открыть Grid' : 'Open Paginated Grid'}
+                </button>
+              </div>
+            </form>
           )}
 
           {(activeNav === 'dashboard' || activeNav === 'lifecycle' || activeNav === 'documents') && (

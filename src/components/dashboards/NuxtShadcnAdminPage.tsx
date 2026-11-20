@@ -11,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   PanelLeft,
+  PanelRight,
   Search,
   Settings,
 } from 'lucide-react';
@@ -21,7 +22,10 @@ import {
   type PeriodRange,
   type TransactionRow,
 } from '../../data/mockDashboardData';
+import { useFormLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from '../shared/AvatarWithFallback';
+import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart, InteractiveBarChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
@@ -39,6 +43,7 @@ type TopTab = 'overview' | 'reports' | 'exports';
 
 interface Props {
   onOpenCommand: () => void;
+  onOpenOffcanvas: () => void;
 }
 
 const MENU_ITEMS: SidebarMenuItem[] = [
@@ -82,7 +87,10 @@ const PAGE_LABELS: Record<SubPage, { group: string; title: string }> = {
   settings: { group: 'Operations', title: 'Workspace Settings' },
 };
 
-export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
+export function NuxtShadcnAdminPage({ onOpenCommand, onOpenOffcanvas }: Props) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [centeredWidth, setCenteredWidth] = useState(false);
   const [activePage, setActivePage] = useState<SubPage>('overview');
@@ -91,7 +99,6 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | TransactionRow['status']>('All');
   const [sortAsc, setSortAsc] = useState(false);
-  const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [workspaceEmail, setWorkspaceEmail] = useState('ops@nuxtadmin.dev');
   const [autoRenew, setAutoRenew] = useState(true);
   const [tasks, setTasks] = useState([
@@ -116,8 +123,13 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
   const chartData = REVENUE_SERIES[period];
 
   const handleExport = () => {
-    setExportNotice(`Exported ${filteredRows.length} records to revenue-report-${period}.csv`);
-    setTimeout(() => setExportNotice(null), 2600);
+    toast({
+      variant: 'success',
+      title: isRu ? 'Отчёт экспортирован' : 'Report exported',
+      description: isRu
+        ? `Сохранено ${filteredRows.length} записей в revenue-report-${period}.csv`
+        : `Exported ${filteredRows.length} records to revenue-report-${period}.csv`,
+    });
   };
 
   const toggleTask = (id: string) => {
@@ -241,6 +253,16 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
               {centeredWidth ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
               <span className="hidden md:inline">{centeredWidth ? 'Centered' : 'Fluid'}</span>
             </button>
+
+            <button
+              onClick={onOpenOffcanvas}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap"
+              style={{ borderColor: 'var(--d-border)', backgroundColor: 'var(--d-surface)' }}
+              title="Open Offcanvas Drawer"
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Offcanvas</span>
+            </button>
           </div>
         </header>
 
@@ -320,7 +342,15 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
             )}
 
             {activePage === 'settings' && (
-              <div
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  toast({
+                    variant: 'success',
+                    title: isRu ? 'Настройки сохранены' : 'Settings saved',
+                    description: workspaceEmail,
+                  });
+                }}
                 className="max-w-2xl border p-6 space-y-5"
                 style={{
                   backgroundColor: 'var(--d-surface)',
@@ -328,19 +358,30 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
                   borderRadius: 'var(--d-radius)',
                 }}
               >
-                <div className="flex items-center gap-2.5">
-                  <Settings className="w-5 h-5" />
-                  <div>
-                    <h1 className="text-lg font-bold">Workspace Settings</h1>
-                    <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
-                      Configure billing contacts and container layout defaults
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <Settings className="w-5 h-5" />
+                    <div>
+                      <h1 className="text-lg font-bold">
+                        {isRu ? 'Настройки рабочего пространства' : 'Workspace Settings'}
+                      </h1>
+                      <p className="text-xs" style={{ color: 'var(--d-muted)' }}>
+                        {isRu
+                          ? 'Контакты биллинга и параметры автоматического продления'
+                          : 'Configure billing contacts and container layout defaults'}
+                      </p>
+                    </div>
                   </div>
+                  <FormLanguageToggle compact />
                 </div>
                 <div className="space-y-4 text-xs">
                   <label className="block space-y-1.5">
-                    <span className="font-medium">Primary Operations Email</span>
+                    <span className="font-medium">
+                      {isRu ? 'Основной email для уведомлений' : 'Primary Operations Email'}
+                    </span>
                     <input
+                      type="email"
+                      required
                       value={workspaceEmail}
                       onChange={(e) => setWorkspaceEmail(e.target.value)}
                       className="w-full px-3 py-2 border rounded-md bg-transparent outline-none"
@@ -348,15 +389,28 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
                     />
                   </label>
                   <label className="flex items-center justify-between py-2 border-t border-b cursor-pointer" style={{ borderColor: 'var(--d-border)' }}>
-                    <span>Automatic invoice retries for Past Due tenants</span>
+                    <span>
+                      {isRu
+                        ? 'Автоматически повторять списание при просрочке счёта'
+                        : 'Automatic invoice retries for Past Due tenants'}
+                    </span>
                     <input
                       type="checkbox"
                       checked={autoRenew}
                       onChange={(e) => setAutoRenew(e.target.checked)}
                     />
                   </label>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-xs font-medium rounded-md hover:opacity-90"
+                      style={{ backgroundColor: 'var(--d-primary)', color: 'var(--d-primary-fg)' }}
+                    >
+                      {isRu ? 'Сохранить настройки' : 'Save Settings'}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </form>
             )}
 
             {(activePage === 'overview' || activePage === 'analytics') && (
@@ -401,19 +455,6 @@ export function NuxtShadcnAdminPage({ onOpenCommand }: Props) {
                     </button>
                   </div>
                 </div>
-
-                {exportNotice && (
-                  <div
-                    className="px-4 py-2.5 rounded-lg border text-xs font-medium"
-                    style={{
-                      backgroundColor: 'var(--d-accent-soft)',
-                      borderColor: 'var(--d-border)',
-                      color: 'var(--d-primary)',
-                    }}
-                  >
-                    {exportNotice}
-                  </div>
-                )}
 
                 <div
                   className="inline-flex p-1 rounded-lg border"

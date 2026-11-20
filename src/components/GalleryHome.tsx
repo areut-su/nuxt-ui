@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { ArrowRight, Check, ExternalLink, Layers, Palette, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Bell, Check, ExternalLink, Layers, Palette, PanelRight, ShieldCheck } from 'lucide-react';
 import { DASHBOARD_STYLES, GLOBAL_THEME_SCHEMES } from '../data/stylesRegistry';
+import { useToast } from '../context/ToastContext';
 import type { DashboardStyleId, DashboardStyleMeta, StyleCategory, ThemePreset } from '../types/showcase';
 
 interface GalleryHomeProps {
   globalTheme: ThemePreset;
   onSelectGlobalTheme: (themeId: string) => void;
   onOpenStyle: (styleId: DashboardStyleId) => void;
+  onOpenOffcanvas: () => void;
 }
 
 function StyleMiniPreview({
@@ -143,7 +145,9 @@ export function GalleryHome({
   globalTheme,
   onSelectGlobalTheme,
   onOpenStyle,
+  onOpenOffcanvas,
 }: GalleryHomeProps) {
+  const { toast } = useToast();
   const [category, setCategory] = useState<StyleCategory>('all');
   const [schemeFilter, setSchemeFilter] = useState<'all' | 'light' | 'dark'>('all');
   const [matrixSort, setMatrixSort] = useState<'order' | 'bundle' | 'memory'>('order');
@@ -244,24 +248,50 @@ export function GalleryHome({
               </div>
             </div>
 
-            <div className="inline-flex p-1 bg-slate-100 rounded-lg self-start sm:self-auto">
-              {[
-                { id: 'all' as const, label: `Все (${GLOBAL_THEME_SCHEMES.length})` },
-                { id: 'light' as const, label: 'Светлые (8)' },
-                { id: 'dark' as const, label: 'Тёмные (6)' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setSchemeFilter(f.id)}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                    schemeFilter === f.id
-                      ? 'bg-white text-slate-950 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-950'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={onOpenOffcanvas}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-900 transition-colors whitespace-nowrap"
+              >
+                <PanelRight className="w-3.5 h-3.5" />
+                <span>Offcanvas</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  toast({
+                    variant: 'success',
+                    title: `Toast · ${globalTheme.labelRu}`,
+                    description: 'Уведомления и Offcanvas работают во всех 14 цветовых схемах.',
+                  })
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-900 transition-colors whitespace-nowrap"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                <span>Toast</span>
+              </button>
+
+              <div className="inline-flex p-1 bg-slate-100 rounded-lg">
+                {[
+                  { id: 'all' as const, label: `Все (${GLOBAL_THEME_SCHEMES.length})` },
+                  { id: 'light' as const, label: 'Светлые (8)' },
+                  { id: 'dark' as const, label: 'Тёмные (6)' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setSchemeFilter(f.id)}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                      schemeFilter === f.id
+                        ? 'bg-white text-slate-950 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-950'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

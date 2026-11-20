@@ -1,7 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, ChevronDown, ExternalLink, Palette, Search } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bell,
+  Check,
+  ChevronDown,
+  ExternalLink,
+  Palette,
+  PanelRight,
+  Search,
+} from 'lucide-react';
 import { DASHBOARD_STYLES, GLOBAL_THEME_SCHEMES } from '../data/stylesRegistry';
+import { useFormLocale } from '../context/LocaleContext';
+import { useToast } from '../context/ToastContext';
 import type { DashboardStyleId, DashboardStyleMeta, ThemePreset } from '../types/showcase';
+import { FormLanguageToggle } from './shared/FormLanguageToggle';
 
 interface ShowcaseTopBarProps {
   activeStyle: DashboardStyleMeta;
@@ -10,6 +22,7 @@ interface ShowcaseTopBarProps {
   onSelectStyle: (id: DashboardStyleId) => void;
   onSelectTheme: (themeId: string) => void;
   onOpenCommand: () => void;
+  onOpenOffcanvas: () => void;
 }
 
 const QUICK_THEME_IDS = ['light', 'dark', 'blue'];
@@ -21,7 +34,11 @@ export function ShowcaseTopBar({
   onSelectStyle,
   onSelectTheme,
   onOpenCommand,
+  onOpenOffcanvas,
 }: ShowcaseTopBarProps) {
+  const { locale } = useFormLocale();
+  const { toast } = useToast();
+  const isRu = locale === 'ru';
   const [menuOpen, setMenuOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -305,6 +322,45 @@ export function ShowcaseTopBar({
             </div>
           )}
         </div>
+
+        <FormLanguageToggle variant="topbar" isDark={isDark} />
+
+        <button
+          onClick={onOpenOffcanvas}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 ${
+            isDark
+              ? 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-100'
+              : 'bg-slate-100 hover:bg-slate-200/80 border-slate-200 text-slate-900'
+          }`}
+          title={isRu ? 'Открыть боковую панель Offcanvas' : 'Open Offcanvas Drawer'}
+        >
+          <PanelRight className="w-3.5 h-3.5" />
+          <span className="hidden xl:inline">Offcanvas</span>
+        </button>
+
+        <button
+          onClick={() =>
+            toast({
+              variant: 'success',
+              title: isRu
+                ? `Toast · ${activeTheme.labelRu}`
+                : `Toast · ${activeTheme.id.toUpperCase()}`,
+              description: isRu
+                ? `Активный шаблон: ${activeStyle.name}. Уведомления работают во всех 14 схемах.`
+                : `Active template: ${activeStyle.name}. Toasts adapt to all 14 color schemes.`,
+            })
+          }
+          className={`inline-flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 ${
+            isDark
+              ? 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
+              : 'bg-slate-100 hover:bg-slate-200/80 border-slate-200 text-slate-700'
+          }`}
+          title={isRu ? 'Показать Toast-уведомление' : 'Trigger Toast Notification'}
+          aria-label="Trigger toast notification"
+        >
+          <Bell className="w-3.5 h-3.5" />
+          <span className="hidden 2xl:inline">Toast</span>
+        </button>
 
         <button
           onClick={onOpenCommand}

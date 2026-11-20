@@ -146,11 +146,18 @@ export function GalleryHome({
 }: GalleryHomeProps) {
   const [category, setCategory] = useState<StyleCategory>('all');
   const [schemeFilter, setSchemeFilter] = useState<'all' | 'light' | 'dark'>('all');
+  const [matrixSort, setMatrixSort] = useState<'order' | 'bundle' | 'memory'>('order');
 
   const filteredStyles =
     category === 'all'
       ? DASHBOARD_STYLES
       : DASHBOARD_STYLES.filter((s) => s.category === category);
+
+  const sortedMatrixStyles = [...DASHBOARD_STYLES].sort((a, b) => {
+    if (matrixSort === 'bundle') return a.bundleSizeKb - b.bundleSizeKb;
+    if (matrixSort === 'memory') return a.memoryUsageMb - b.memoryUsageMb;
+    return Number(a.orderLabel) - Number(b.orderLabel);
+  });
 
   const visibleSchemes = GLOBAL_THEME_SCHEMES.filter((t) => {
     if (schemeFilter === 'light') return !t.isDark;
@@ -400,53 +407,144 @@ export function GalleryHome({
         </div>
       </section>
 
-      {/* Architectural Comparison Table */}
+      {/* Architectural & Performance Comparison Table */}
       <section id="comparison" className="max-w-7xl mx-auto px-6 pb-16">
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-950">Сравнительная матрица дизайн-систем</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Ключевые отличия компоновки, плотности данных и системы темизации
+          <div className="px-6 py-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <Layers className="w-4 h-4 text-slate-500 shrink-0" />
+                <h2 className="text-lg font-bold text-slate-950">
+                  Сравнительная матрица дизайн-систем
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500">
+                Количество подключаемых библиотек, ориентировочный размер бандла (JS + CSS gzip) и потребление памяти (RAM / JS Heap)
               </p>
             </div>
-            <Layers className="w-5 h-5 text-slate-400 shrink-0" />
+
+            <div className="inline-flex p-1 bg-slate-100 rounded-lg self-start md:self-auto">
+              {[
+                { id: 'order' as const, label: 'По порядку' },
+                { id: 'bundle' as const, label: 'Меньше бандл' },
+                { id: 'memory' as const, label: 'Меньше памяти' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setMatrixSort(opt.id)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                    matrixSort === opt.id
+                      ? 'bg-white text-slate-950 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-950'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-5 font-medium">Шаблон</th>
-                  <th className="py-3 px-5 font-medium">Архитектура сетки</th>
-                  <th className="py-3 px-5 font-medium">Плотность</th>
-                  <th className="py-3 px-5 font-medium">Радиусы</th>
-                  <th className="py-3 px-5 font-medium">Система тем</th>
-                  <th className="py-3 px-5 font-medium">Оптимально для</th>
+                  <th className="py-3 px-4 font-medium">Шаблон и лицензия</th>
+                  <th className="py-3 px-4 font-medium">Библиотеки (зависимости)</th>
+                  <th className="py-3 px-4 font-medium">Размер бандла (gzip)</th>
+                  <th className="py-3 px-4 font-medium">Память (RAM / Heap)</th>
+                  <th className="py-3 px-4 font-medium">Архитектура и радиусы</th>
+                  <th className="py-3 px-4 font-medium">Оценка для Nuxt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {DASHBOARD_STYLES.map((st) => (
-                  <tr key={st.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-5 font-semibold text-slate-900">
-                      <button
-                        onClick={() => onOpenStyle(st.id)}
-                        className="hover:underline text-left"
-                      >
-                        {st.orderLabel}. {st.name}
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-5 text-slate-600">{st.architectureRu}</td>
-                    <td className="py-3.5 px-5 text-slate-600">{st.densityRu}</td>
-                    <td className="py-3.5 px-5 font-mono-num text-slate-600">{st.radiusRu}</td>
-                    <td className="py-3.5 px-5 text-slate-600">
-                      Все {GLOBAL_THEME_SCHEMES.length} общих схем
-                    </td>
-                    <td className="py-3.5 px-5 text-slate-600">{st.bestForRu}</td>
-                  </tr>
-                ))}
+                {sortedMatrixStyles.map((st) => {
+                  const bundlePct = Math.min(100, Math.round((st.bundleSizeKb / 190) * 100));
+                  const memPct = Math.min(100, Math.round((st.memoryUsageMb / 65) * 100));
+                  const toneColor =
+                    st.footprintTone === 'optimal'
+                      ? 'text-emerald-700'
+                      : st.footprintTone === 'light'
+                        ? 'text-sky-700'
+                        : st.footprintTone === 'medium'
+                          ? 'text-amber-700'
+                          : 'text-rose-700';
+                  const barColor =
+                    st.footprintTone === 'optimal'
+                      ? 'bg-emerald-500'
+                      : st.footprintTone === 'light'
+                        ? 'bg-sky-500'
+                        : st.footprintTone === 'medium'
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500';
+
+                  return (
+                    <tr key={st.id} className="hover:bg-slate-50/70 transition-colors align-top">
+                      <td className="py-3.5 px-4">
+                        <button
+                          onClick={() => onOpenStyle(st.id)}
+                          className="font-semibold text-slate-900 hover:underline text-left block"
+                        >
+                          {st.orderLabel}. {st.name}
+                        </button>
+                        <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
+                          <span className="font-medium text-emerald-700">MIT</span>
+                          <span aria-hidden="true">·</span>
+                          <span className="truncate max-w-44">{st.repo}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 max-w-60">
+                        <div className="font-semibold text-slate-900 font-mono-num">
+                          {st.dependenciesCountRu}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                          {st.dependenciesListRu}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="font-mono-num font-semibold text-slate-900">
+                          {st.bundleSizeRu}
+                        </div>
+                        <div className="mt-1.5 w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${bundlePct}%` }} />
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="font-mono-num font-semibold text-slate-900">
+                          {st.memoryUsageRu}
+                        </div>
+                        <div className="mt-1.5 w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${memPct}%` }} />
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-slate-600">
+                        <div>{st.architectureRu}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 font-mono-num">
+                          {st.densityRu} · {st.radiusRu}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className={`font-semibold ${toneColor}`}>{st.footprintLabelRu}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">{st.bestForRu}</div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+
+          <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
+            <span>
+              Оценки приведены для production-сборки Nuxt 3/4 (JS + CSS gzip, Chrome JS Heap на типовом экране с графиком и таблицей).
+            </span>
+            <span className="font-mono-num shrink-0">
+              Общих схем: {GLOBAL_THEME_SCHEMES.length} · Лицензия: MIT
+            </span>
           </div>
         </div>
       </section>
@@ -456,12 +554,24 @@ export function GalleryHome({
           id="license"
           className="max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-slate-500"
         >
-          <div className="flex items-center gap-2 text-slate-700 font-medium">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Все 5 представленных дизайн-систем распространяются под открытой лицензией MIT.</span>
+          <div className="flex flex-wrap items-center gap-3 text-slate-700 font-medium">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Лицензия MIT · Все 5 дизайн-систем свободны для коммерческого использования</span>
+            </span>
+            <span aria-hidden="true" className="text-slate-300">·</span>
+            <a
+              href="https://github.com/areut-su/nuxt-ui"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-950 underline-offset-2 hover:underline"
+            >
+              <span>github.com/areut-su/nuxt-ui</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
           <div>
-            Для быстрого переключения в любом месте нажмите{' '}
+            Быстрый переход:{' '}
             <kbd className="font-mono-num px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50">
               ⌘K
             </kbd>

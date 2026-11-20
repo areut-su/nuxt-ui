@@ -62,6 +62,14 @@ export interface DashboardStyleMeta {
   bestForRu: string;
   highlightsRu: string[];
   radiusToken: string;
+  dependenciesCountRu: string;
+  dependenciesListRu: string;
+  bundleSizeRu: string;
+  bundleSizeKb: number;
+  memoryUsageRu: string;
+  memoryUsageMb: number;
+  footprintLabelRu: string;
+  footprintTone: 'optimal' | 'light' | 'medium' | 'heavy';
 }
 
 export function themeTokensToStyle(

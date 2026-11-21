@@ -30,6 +30,7 @@ import {
   MiniSparkline,
 } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
+import { ThemedActionButtonsPage } from '../shared/ThemedActionButtonsPage';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
 import { ThemedOffcanvas } from '../shared/ThemedOffcanvas';
 
@@ -38,6 +39,7 @@ type AdminPage =
   | 'v1'
   | 'grid-table'
   | 'grid-cards'
+  | 'buttons-edit'
   | 'orders'
   | 'widgets'
   | 'settings';
@@ -64,6 +66,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     children: [
       { id: 'grid-table', label: 'Paginated Grid', badge: 24 },
       { id: 'grid-cards', label: 'Card Grid View' },
+      { id: 'buttons-edit', label: 'Buttons & Edit' },
       { id: 'orders', label: 'Latest Orders' },
     ],
   },
@@ -105,6 +108,7 @@ export function AdminLteVuePage({ onOpenCommand, onOpenOffcanvas }: Props) {
     v1: 'Dashboard v1 — Charts & Analytics',
     'grid-table': 'Paginated Accounts Grid',
     'grid-cards': 'Accounts Card Grid',
+    'buttons-edit': 'Buttons & Record Editor',
     orders: 'Latest Orders & Inventory',
     widgets: 'InfoBox & SmallBox Widgets',
     settings: 'AdminLTE Layout Settings',
@@ -191,6 +195,9 @@ export function AdminLteVuePage({ onOpenCommand, onOpenOffcanvas }: Props) {
             <button onClick={() => setActivePage('grid-table')} className="opacity-75 hover:opacity-100">
               Data Grid
             </button>
+            <button onClick={() => setActivePage('buttons-edit')} className="opacity-75 hover:opacity-100">
+              Buttons & Edit
+            </button>
             <button onClick={() => setActivePage('orders')} className="opacity-75 hover:opacity-100">
               Orders
             </button>
@@ -262,6 +269,10 @@ export function AdminLteVuePage({ onOpenCommand, onOpenOffcanvas }: Props) {
                 subtitle="Paginated card grid view for rapid tenant inspection"
                 defaultViewMode="cards"
               />
+            )}
+
+            {activePage === 'buttons-edit' && (
+              <ThemedActionButtonsPage templateLabel="AdminLTE 4 Vue" />
             )}
 
             {activePage === 'settings' && (

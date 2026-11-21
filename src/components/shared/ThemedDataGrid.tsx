@@ -24,6 +24,7 @@ import { useFormLocale } from '../../context/LocaleContext';
 import { useToast } from '../../context/ToastContext';
 import { AvatarWithFallback } from './AvatarWithFallback';
 import { FormLanguageToggle } from './FormLanguageToggle';
+import { IconTooltipButton } from './IconTooltipButton';
 import { ThemedOffcanvas } from './ThemedOffcanvas';
 
 type SortField = 'id' | 'customer' | 'seats' | 'mrr' | 'updatedAt';
@@ -921,36 +922,33 @@ export function ThemedDataGrid({
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button
+                    <IconTooltipButton
+                      tone="neutral"
+                      label={t.inspectAction}
                       onClick={() => setInspectRecord(row)}
-                      className="p-1.5 rounded border hover:opacity-80"
-                      style={{ borderColor: 'var(--d-border)' }}
-                      title={t.inspectAction}
-                      aria-label={`Inspect ${row.customer}`}
+                      className="w-7 h-7"
                     >
                       <PanelRight className="w-3.5 h-3.5" />
-                    </button>
-                    <button
+                    </IconTooltipButton>
+                    <IconTooltipButton
+                      tone="primary-soft"
+                      label={t.editAction}
                       onClick={() => {
                         setIsCreating(false);
                         setEditingRecord({ ...row });
                       }}
-                      className="p-1.5 rounded border hover:opacity-80"
-                      style={{ borderColor: 'var(--d-border)' }}
-                      title={t.editAction}
-                      aria-label={`Edit ${row.customer}`}
+                      className="w-7 h-7"
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
+                    </IconTooltipButton>
+                    <IconTooltipButton
+                      tone="danger-outline"
+                      label={t.deleteAction}
                       onClick={() => requestDeleteRow(row)}
-                      className="p-1.5 rounded border hover:opacity-80"
-                      style={{ borderColor: 'var(--d-border)', color: 'var(--d-danger)' }}
-                      title={t.deleteAction}
-                      aria-label={`Delete ${row.customer}`}
+                      className="w-7 h-7"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </IconTooltipButton>
                   </div>
                 </div>
               </div>
@@ -1025,8 +1023,9 @@ export function ThemedDataGrid({
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: 'var(--d-border)' }}>
-                {pagedRows.map((row) => {
+                {pagedRows.map((row, rowIdx) => {
                   const isSelected = selectedIds.includes(row.id);
+                  const tipPlace = rowIdx === 0 ? 'bottom' : 'top';
                   return (
                     <tr
                       key={row.id}
@@ -1083,36 +1082,37 @@ export function ThemedDataGrid({
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="inline-flex items-center gap-1">
-                          <button
+                          <IconTooltipButton
+                            tone="neutral"
+                            label={t.inspectAction}
+                            placement={tipPlace}
                             onClick={() => setInspectRecord(row)}
-                            className="p-1.5 rounded border hover:opacity-80"
-                            style={{ borderColor: 'var(--d-border)' }}
-                            title={t.inspectAction}
-                            aria-label={`Inspect ${row.id}`}
+                            className="w-7 h-7"
                           >
                             <PanelRight className="w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </IconTooltipButton>
+                          <IconTooltipButton
+                            tone="primary-soft"
+                            label={t.editAction}
+                            placement={tipPlace}
                             onClick={() => {
                               setIsCreating(false);
                               setEditingRecord({ ...row });
                             }}
-                            className="p-1.5 rounded border hover:opacity-80"
-                            style={{ borderColor: 'var(--d-border)' }}
-                            title={t.editAction}
-                            aria-label={`Edit ${row.id}`}
+                            className="w-7 h-7"
                           >
                             <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
+                          </IconTooltipButton>
+                          <IconTooltipButton
+                            tone="danger-outline"
+                            label={t.deleteAction}
+                            placement={tipPlace}
+                            align="right"
                             onClick={() => requestDeleteRow(row)}
-                            className="p-1.5 rounded border hover:opacity-80"
-                            style={{ borderColor: 'var(--d-border)', color: 'var(--d-danger)' }}
-                            title={t.deleteAction}
-                            aria-label={`Delete ${row.id}`}
+                            className="w-7 h-7"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </IconTooltipButton>
                         </div>
                       </td>
                     </tr>

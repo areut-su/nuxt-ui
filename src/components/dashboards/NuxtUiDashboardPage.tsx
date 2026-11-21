@@ -24,9 +24,10 @@ import { AvatarWithFallback } from '../shared/AvatarWithFallback';
 import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
+import { ThemedActionButtonsPage } from '../shared/ThemedActionButtonsPage';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
 
-type UPanel = 'home' | 'markets' | 'inbox' | 'customers-grid' | 'customers-cards' | 'settings';
+type UPanel = 'home' | 'markets' | 'inbox' | 'customers-grid' | 'customers-cards' | 'buttons-edit' | 'settings';
 
 interface Props {
   onOpenCommand: () => void;
@@ -74,6 +75,7 @@ export function NuxtUiDashboardPage({ onOpenCommand, onOpenOffcanvas }: Props) {
       children: [
         { id: 'customers-grid', label: 'Paginated Grid', badge: 24 },
         { id: 'customers-cards', label: 'Card Directory' },
+        { id: 'buttons-edit', label: 'Buttons & Edit' },
       ],
     },
     {
@@ -356,6 +358,10 @@ export function NuxtUiDashboardPage({ onOpenCommand, onOpenOffcanvas }: Props) {
               subtitle="UPageGrid card layout with multi-page pagination and region filtering"
               defaultViewMode="cards"
             />
+          </div>
+        ) : panel === 'buttons-edit' ? (
+          <div className="p-6">
+            <ThemedActionButtonsPage templateLabel="Nuxt UI Dashboard" />
           </div>
         ) : panel === 'settings' ? (
           <div className="p-6">

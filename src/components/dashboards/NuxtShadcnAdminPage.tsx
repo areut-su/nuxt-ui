@@ -28,6 +28,7 @@ import { AvatarWithFallback } from '../shared/AvatarWithFallback';
 import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart, InteractiveBarChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
+import { ThemedActionButtonsPage } from '../shared/ThemedActionButtonsPage';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
 
 type SubPage =
@@ -36,6 +37,7 @@ type SubPage =
   | 'grid-table'
   | 'grid-cards'
   | 'grid-pending'
+  | 'buttons-edit'
   | 'tasks'
   | 'settings';
 
@@ -71,6 +73,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     label: 'Operations',
     icon: CheckSquare,
     children: [
+      { id: 'buttons-edit', label: 'Buttons & Edit' },
       { id: 'tasks', label: 'Sprint Tasks' },
       { id: 'settings', label: 'Workspace Settings' },
     ],
@@ -83,6 +86,7 @@ const PAGE_LABELS: Record<SubPage, { group: string; title: string }> = {
   'grid-table': { group: 'Data & Grid', title: 'Accounts Grid (Paginated)' },
   'grid-cards': { group: 'Data & Grid', title: 'Card Directory' },
   'grid-pending': { group: 'Data & Grid', title: 'Pending Review' },
+  'buttons-edit': { group: 'Operations', title: 'Buttons & Edit' },
   tasks: { group: 'Operations', title: 'Sprint Tasks' },
   settings: { group: 'Operations', title: 'Workspace Settings' },
 };
@@ -294,6 +298,10 @@ export function NuxtShadcnAdminPage({ onOpenCommand, onOpenOffcanvas }: Props) {
                 defaultViewMode="table"
                 defaultStatusFilter="Pending"
               />
+            )}
+
+            {activePage === 'buttons-edit' && (
+              <ThemedActionButtonsPage templateLabel="Nuxt Shadcn Admin" />
             )}
 
             {activePage === 'tasks' && (

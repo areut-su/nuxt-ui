@@ -63,7 +63,7 @@ export function ThemedOffcanvas({
 
       {/* Slide-Over Offcanvas Panel */}
       <div
-        className={`relative z-10 w-full ${SIZE_CLASS[size]} h-full flex flex-col shadow-2xl ${
+        className={`themed-offcanvas relative z-10 w-full ${SIZE_CLASS[size]} h-full flex flex-col shadow-2xl ${
           isRight ? 'border-l' : 'border-r'
         }`}
         style={{
@@ -95,8 +95,7 @@ export function ThemedOffcanvas({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded border hover:opacity-75 transition-opacity"
-              style={{ borderColor: 'var(--d-border)' }}
+              className="d-icon-btn d-btn-neutral p-1.5 inline-flex items-center justify-center"
               aria-label="Close offcanvas"
             >
               <X className="w-4 h-4" />

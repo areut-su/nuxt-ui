@@ -24,9 +24,10 @@ import { AvatarWithFallback } from '../shared/AvatarWithFallback';
 import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
+import { ThemedActionButtonsPage } from '../shared/ThemedActionButtonsPage';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
 
-type MiguelPage = 'home' | 'grid-accounts' | 'grid-cards' | 'team' | 'audit';
+type MiguelPage = 'home' | 'grid-accounts' | 'grid-cards' | 'buttons-edit' | 'team' | 'audit';
 
 interface Props {
   onOpenCommand: () => void;
@@ -50,6 +51,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     children: [
       { id: 'grid-accounts', label: 'Customers Grid', badge: 24 },
       { id: 'grid-cards', label: 'Account Cards' },
+      { id: 'buttons-edit', label: 'Buttons & Edit' },
     ],
   },
   {
@@ -219,6 +221,10 @@ export function MiguelShadcnPage({ onOpenCommand, onOpenOffcanvas }: Props) {
               subtitle="Paginated responsive card grid view with multi-criteria filtering"
               defaultViewMode="cards"
             />
+          )}
+
+          {activeNav === 'buttons-edit' && (
+            <ThemedActionButtonsPage templateLabel="Miguel Shadcn Dashboard" />
           )}
 
           {activeNav === 'audit' && (

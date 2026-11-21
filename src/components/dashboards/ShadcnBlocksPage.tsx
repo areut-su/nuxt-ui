@@ -24,9 +24,10 @@ import { AvatarWithFallback } from '../shared/AvatarWithFallback';
 import { FormLanguageToggle } from '../shared/FormLanguageToggle';
 import { InteractiveAreaChart } from '../shared/InteractiveCharts';
 import { SidebarTreeNav, type SidebarMenuItem } from '../shared/SidebarTreeNav';
+import { ThemedActionButtonsPage } from '../shared/ThemedActionButtonsPage';
 import { ThemedDataGrid } from '../shared/ThemedDataGrid';
 
-type BlocksPageId = 'dashboard' | 'lifecycle' | 'grid-table' | 'grid-cards' | 'documents' | 'settings';
+type BlocksPageId = 'dashboard' | 'lifecycle' | 'grid-table' | 'grid-cards' | 'buttons-edit' | 'documents' | 'settings';
 
 interface Props {
   onOpenCommand: () => void;
@@ -50,6 +51,7 @@ const MENU_ITEMS: SidebarMenuItem[] = [
     children: [
       { id: 'grid-table', label: 'Paginated Grid', badge: 24 },
       { id: 'grid-cards', label: 'Card Grid View' },
+      { id: 'buttons-edit', label: 'Buttons & Edit' },
       { id: 'documents', label: 'Focus Documents' },
     ],
   },
@@ -247,6 +249,10 @@ export function ShadcnBlocksPage({ onOpenCommand, onOpenOffcanvas }: Props) {
               subtitle="Multi-column card layout powered by the same filterable dataset"
               defaultViewMode="cards"
             />
+          )}
+
+          {activeNav === 'buttons-edit' && (
+            <ThemedActionButtonsPage templateLabel="Shadcn-Vue Block 01" />
           )}
 
           {activeNav === 'settings' && (
